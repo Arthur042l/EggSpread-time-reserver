@@ -1,0 +1,8 @@
+/* style.css */
+h1 {
+  color: text-blue-500; /* 或寫 blue */
+  color: blue;
+}
+p {
+  font-size: 18px;
+}
