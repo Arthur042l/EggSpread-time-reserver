@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DateMatch - Friend Group Free Date Finder</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-custom-gradient min-h-screen text-slate-800 font-sans antialiased pb-12">
+
+    <!-- Navbar -->
+    <header class="w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-700/60 sticky top-0 z-50 text-white">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="navigate('calendar')">
+                <div class="p-2 bg-gradient-to-tr from-teal-400 to-emerald-400 text-slate-900 rounded-xl shadow font-bold">
+                    <i data-lucide="users" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <span class="font-bold text-lg bg-gradient-to-r from-teal-300 via-emerald-300 to-yellow-200 bg-clip-text text-transparent">DateMatch</span>
+                    <span id="header-event-badge" class="ml-2 text-xs px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-mono hidden sm:inline-block">--</span>
+                </div>
+            </div>
+
+            <div id="nav-actions" class="flex items-center space-x-3">
+                <nav class="flex bg-slate-800/80 p-1 rounded-xl border border-slate-700/50 text-xs font-semibold">
+                    <button id="tab-calendar" onclick="navigate('calendar')" class="px-3 py-1.5 rounded-lg text-teal-400 bg-slate-700 shadow"><i data-lucide="calendar" class="w-3.5 h-3.5 inline mr-1"></i> Calendar</button>
+                    <button id="tab-list" onclick="navigate('list')" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white"><i data-lucide="list" class="w-3.5 h-3.5 inline mr-1"></i> Members</button>
+                    <button id="tab-admin" onclick="navigate('admin')" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white"><i data-lucide="settings" class="w-3.5 h-3.5 inline mr-1"></i> Settings</button>
+                </nav>
+
+                <div id="user-info-pill" class="hidden items-center gap-2 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-xl">
+                    <div id="user-avatar-initial" class="w-6 h-6 rounded-full bg-teal-500 text-slate-900 font-bold text-xs flex items-center justify-center">?</div>
+                    <span id="user-name-display" class="text-xs font-semibold text-slate-200 hidden md:inline">User</span>
+                    <button onclick="logout()" class="text-slate-400 hover:text-red-400 ml-1" title="Log out"><i data-lucide="log-out" class="w-3.5 h-3.5"></i></button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 pt-6">
+
+        <!-- LOGIN / JOIN EVENT PAGE -->
+        <section id="page-login" class="max-w-md mx-auto my-12 bg-white/95 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-white/40">
+            <div class="text-center mb-8">
+                <div class="inline-flex p-3 bg-teal-500/10 text-teal-600 rounded-2xl mb-3"><i data-lucide="calendar-heart" class="w-8 h-8"></i></div>
+                <h2 class="text-2xl font-bold text-slate-900">Find Free Days Together</h2>
+                <p class="text-xs text-slate-500 mt-1">Enter event secret code and name to join!</p>
+            </div>
+
+            <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1"><i data-lucide="key-round" class="w-3.5 h-3.5 inline text-teal-600"></i> Event Secret Code</label>
+                    <input type="text" id="login-secret-code" required placeholder="e.g. BBQ2026" class="w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm font-mono uppercase font-bold focus:ring-2 focus:ring-teal-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1"><i data-lucide="user" class="w-3.5 h-3.5 inline text-teal-600"></i> Your Name</label>
+                    <input type="text" id="login-user-name" required placeholder="e.g. Alex Wong" class="w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm font-semibold focus:ring-2 focus:ring-teal-500">
+                </div>
+                <label class="flex items-center space-x-2 cursor-pointer pt-1">
+                    <input type="checkbox" id="remember-me-checkbox" checked class="w-4 h-4 text-teal-600 rounded border-slate-300">
+                    <span class="text-xs font-semibold text-slate-600">Remember me on this browser</span>
+                </label>
+                <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2">
+                    <span>Enter Event Calendar</span><i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+            </form>
+
+            <div class="mt-6 pt-4 border-t text-center text-xs text-slate-400">
+                <span>Sample Codes:</span>
+                <div class="flex justify-center gap-2 mt-2">
+                    <button onclick="quickFill('BBQ2026', 'Alex')" class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-mono rounded border">BBQ2026 (Alex)</button>
+                    <button onclick="quickFill('BBQ2026', 'Chris')" class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-mono rounded border">BBQ2026 (Chris)</button>
+                    <button onclick="quickFill('CAMP2026', 'Sam')" class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-mono rounded border">CAMP2026 (Sam)</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- CALENDAR PAGE -->
+        <section id="page-calendar" class="hidden space-y-6">
+            <div class="bg-white/90 backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-white/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-3">
+                        <h2 id="event-title-display" class="text-2xl font-black text-slate-900">Event Title</h2>
+                        <span id="event-code-tag" class="text-xs font-mono font-bold bg-teal-100 text-teal-800 px-2.5 py-1 rounded-lg border">CODE</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">Goal: <strong id="event-group-goal" class="text-slate-800">5</strong> members • Submitted: <strong id="event-submitted-count" class="text-teal-600">3</strong> members</p>
+                </div>
+                <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border">
+                    <div class="text-left text-xs">
+                        <div class="font-bold text-slate-700">Select dates you are FREE:</div>
+                        <div class="text-slate-500">Tap dates on calendar, then submit</div>
+                    </div>
+                    <button onclick="submitFreeDays()" class="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-bold rounded-xl shadow flex items-center gap-1.5">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i><span>Submit Free Days</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white/90 backdrop-blur-xl p-6 rounded-3xl shadow-2xl border border-white/50">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center space-x-3">
+                        <span id="cal-month-year" class="text-2xl font-black text-slate-800">Month 2026</span>
+                        <div id="all-free-count-badge" class="hidden items-center gap-1 text-xs font-bold px-3 py-1 bg-amber-100 text-amber-800 rounded-full border border-amber-300">
+                            <i data-lucide="crown" class="w-3.5 h-3.5 text-amber-600"></i><span id="all-free-count-num">0</span> ALL FREE!
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="changeCalMonth(-1)" class="p-2.5 hover:bg-slate-100 rounded-xl border"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                        <button onclick="resetCalToToday()" class="px-3.5 py-2 text-xs font-bold text-teal-700 bg-teal-50 border rounded-xl">Today</button>
+                        <button onclick="changeCalMonth(1)" class="p-2.5 hover:bg-slate-100 rounded-xl border"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-600 mb-4 pb-3 border-b">
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-teal-500"></span> Selected by You</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-400"></span> 100% ALL FREE! 🎉</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-slate-200"></span> Others Free</span>
+                </div>
+
+                <!-- Weekdays Header -->
+                <div class="grid grid-cols-7 mb-2 text-center text-xs font-bold text-slate-400 uppercase">
+                    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                </div>
+
+                <!-- Calendar Days Grid -->
+                <div id="calendar-days-grid" class="grid grid-cols-7 gap-2 sm:gap-3"></div>
+            </div>
+        </section>
+
+        <!-- MEMBER LIST VIEW -->
+        <section id="page-list" class="hidden space-y-6">
+            <div class="bg-white/90 backdrop-blur-xl p-6 rounded-3xl shadow-2xl border border-white/50">
+                <div class="flex items-center justify-between mb-6 pb-4 border-b">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">Submitted Members Overview</h2>
+                        <p class="text-xs text-slate-500">List of all members and their selected free dates</p>
+                    </div>
+                    <span id="member-list-count" class="px-3 py-1 bg-teal-100 text-teal-800 text-xs font-bold rounded-full">0 members</span>
+                </div>
+                <div id="members-cards-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </div>
+        </section>
+
+        <!-- ADMIN & SETTINGS PAGE -->
+        <section id="page-admin" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-white/90 backdrop-blur-xl p-6 rounded-3xl shadow-2xl border border-white/50 space-y-6">
+                    <div class="flex items-center justify-between pb-4 border-b">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-900">Event Settings</h2>
+                            <p class="text-xs text-slate-500">Configure total expected members and secret code</p>
+                        </div>
+                        <span class="p-2 bg-teal-50 text-teal-600 rounded-xl"><i data-lucide="sliders" class="w-5 h-5"></i></span>
+                    </div>
+
+                    <form onsubmit="handleSaveSettings(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Event Name</label>
+                            <input type="text" id="setting-event-name" required class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-semibold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Secret Code</label>
+                            <input type="text" id="setting-event-code" required class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-mono font-bold uppercase">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Total Members in Group</label>
+                            <div class="flex items-center gap-3">
+                                <input type="number" id="setting-group-size" min="1" max="50" required class="w-28 px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-bold">
+                                <span class="text-xs text-slate-500">Triggers the <strong class="text-amber-600">"ALL FREE! 🎉"</strong> indicator when reached.</span>
+                            </div>
+                        </div>
+                        <button type="submit" class="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow">Save Settings</button>
+                    </form>
+
+                    <div class="pt-6 border-t space-y-4">
+                        <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2"><i data-lucide="database" class="w-4 h-4 text-teal-600"></i> Data Management</h3>
+                        <div class="flex flex-wrap gap-3">
+                            <button onclick="exportEventJSON()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl border flex items-center gap-1.5"><i data-lucide="download" class="w-3.5 h-3.5"></i> Export JSON</button>
+                            <button onclick="triggerImportJSON()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl border flex items-center gap-1.5"><i data-lucide="upload" class="w-3.5 h-3.5"></i> Import JSON</button>
+                            <input type="file" id="import-json-file" accept=".json" onchange="importEventJSON(event)" class="hidden">
+                            <button onclick="clearEventResponses()" class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold rounded-xl border border-red-200 flex items-center gap-1.5"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear Responses</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white/90 backdrop-blur-xl p-6 rounded-3xl shadow-2xl border border-white/50 space-y-4">
+                    <h3 class="text-base font-bold text-slate-900 flex items-center gap-2"><i data-lucide="trophy" class="w-5 h-5 text-amber-500"></i> Best Match Dates</h3>
+                    <p class="text-xs text-slate-500">Dates sorted by highest attendance</p>
+                    <div id="leaderboard-container" class="space-y-2 max-h-96 overflow-y-auto pr-1"></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 px-4 py-3 bg-slate-900 text-white text-xs font-semibold rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-2 transition-all transform translate-y-16 opacity-0 z-50">
+        <i data-lucide="info" id="toast-icon" class="w-4 h-4 text-teal-400"></i>
+        <span id="toast-msg">Notification Message</span>
+    </div>
+
+    <!-- Script File -->
+    <script src="script.js"></script>
+</body>
+</html>
