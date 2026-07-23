@@ -53,22 +53,17 @@ async function initAuth() {
     if (!auth) return false;
     if (auth.currentUser) return true;
 
-    if (!authPromise) {
-        authPromise = (async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                return true;
-            } catch (e) {
-                console.warn("Cloud Auth Notice: Operating in local mode.", e);
-                return false;
-            }
-        })();
+    try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+            await signInAnonymously(auth);
+        }
+        return true;
+    } catch (e) {
+        console.warn("Cloud Auth Notice: Operating in local fallback mode.", e);
+        return false;
     }
-    return await authPromise;
 }
 
 // Default Fallback Template for local preview testing
@@ -104,22 +99,25 @@ let calCurrentDate = new Date(2026, 7, 1);
 let eventUnsubscribe = null;
 let isRegisterMode = false;
 
-// Local Session Registry for newly created event codes
+// Local Session Registry for created and checked event codes
 const createdEventsRegistry = {};
 
 // Helper: Check if an event code exists across Default Template, Local Registry, and Firestore Cloud
 async function checkEventExists(code) {
-    if (DEFAULT_EVENT_TEMPLATE[code] || createdEventsRegistry[code]) {
+    const cleanCode = code ? code.trim().toUpperCase() : '';
+    if (!cleanCode) return false;
+
+    if (DEFAULT_EVENT_TEMPLATE[cleanCode] || createdEventsRegistry[cleanCode]) {
         return true;
     }
 
     const isAuthenticated = await initAuth();
     if (isAuthenticated && db) {
         try {
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', code);
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', cleanCode);
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
-                createdEventsRegistry[code] = docSnap.data();
+                createdEventsRegistry[cleanCode] = docSnap.data();
                 return true;
             }
         } catch (err) {
@@ -133,12 +131,14 @@ async function checkEventExists(code) {
 async function listenToCloudEvent(code) {
     if (eventUnsubscribe) eventUnsubscribe();
 
+    const cleanCode = code ? code.trim().toUpperCase() : '';
     const isAuthenticated = await initAuth();
+
     if (!isAuthenticated || !db) {
         if (!activeEventData) {
-            activeEventData = createdEventsRegistry[code] || DEFAULT_EVENT_TEMPLATE[code] || {
-                name: `${code} Event`,
-                code: code,
+            activeEventData = createdEventsRegistry[cleanCode] || DEFAULT_EVENT_TEMPLATE[cleanCode] || {
+                name: `${cleanCode} Event`,
+                code: cleanCode,
                 groupSize: 5,
                 responses: {}
             };
@@ -149,16 +149,16 @@ async function listenToCloudEvent(code) {
     }
 
     try {
-        const eventDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', code);
+        const eventDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', cleanCode);
         
         eventUnsubscribe = onSnapshot(eventDocRef, (docSnap) => {
             if (docSnap.exists()) {
                 activeEventData = docSnap.data();
-                createdEventsRegistry[code] = activeEventData;
+                createdEventsRegistry[cleanCode] = activeEventData;
             } else if (!activeEventData) {
-                const initialData = createdEventsRegistry[code] || DEFAULT_EVENT_TEMPLATE[code] || {
-                    name: `${code} Event`,
-                    code: code,
+                const initialData = createdEventsRegistry[cleanCode] || DEFAULT_EVENT_TEMPLATE[cleanCode] || {
+                    name: `${cleanCode} Event`,
+                    code: cleanCode,
                     groupSize: 5,
                     responses: {}
                 };
@@ -187,15 +187,16 @@ function updateUserStateFromActiveData() {
 
 // Sync Event Data to Firestore Cloud
 async function syncEventToCloud(code, updatedEventData) {
+    const cleanCode = code ? code.trim().toUpperCase() : '';
     activeEventData = updatedEventData;
-    createdEventsRegistry[code] = updatedEventData;
+    createdEventsRegistry[cleanCode] = updatedEventData;
     renderCurrentPage();
 
     const isAuthenticated = await initAuth();
-    if (!isAuthenticated || !db || !code) return;
+    if (!isAuthenticated || !db || !cleanCode) return;
 
     try {
-        const eventDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', code);
+        const eventDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', cleanCode);
         await setDoc(eventDocRef, updatedEventData, { merge: true });
     } catch (e) {
         console.error("Firestore cloud sync failed:", e);
