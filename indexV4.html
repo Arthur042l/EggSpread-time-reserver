@@ -29,12 +29,6 @@
             </div>
 
             <div id="nav-actions" class="flex items-center space-x-1.5 sm:space-x-3">
-                <!-- Device Compact/Wide Mode Badge Button -->
-                <button onclick="toggleManualDeviceMode()" class="px-2 py-1 sm:px-2.5 sm:py-1.5 bg-slate-800 hover:bg-slate-700 text-teal-300 rounded-xl border border-slate-700 text-[11px] font-mono flex items-center gap-1 transition-colors" title="Toggle Mobile/Desktop Mode">
-                    <i data-lucide="smartphone" id="device-mode-icon" class="w-3.5 h-3.5"></i>
-                    <span id="device-mode-badge" class="hidden md:inline">Compact</span>
-                </button>
-
                 <!-- App Info Button -->
                 <button onclick="toggleAppInfoModal(true)" class="p-1.5 sm:p-2 bg-slate-800 hover:bg-slate-700 text-teal-300 rounded-xl border border-slate-700 transition-colors" title="App Info">
                     <i data-lucide="help-circle" class="w-4 h-4"></i>
@@ -62,13 +56,7 @@
             <div class="text-center mb-6">
                 <div class="inline-flex p-3 bg-teal-500/10 text-teal-600 rounded-2xl mb-2 sm:mb-3"><i data-lucide="calendar-heart" class="w-7 h-7 sm:w-8 sm:h-8"></i></div>
                 <h2 class="text-xl sm:text-2xl font-bold text-slate-900">Find Free Days Together</h2>
-                <p class="text-xs text-slate-500 mt-1">Pair with your friend group using a Secret Code</p>
-            </div>
-
-            <!-- Login / Register Switcher Tabs -->
-            <div class="bg-slate-100 p-1 rounded-xl flex mb-5 border border-slate-200">
-                <button id="auth-tab-login" onclick="toggleAuthMode(false)" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-white text-teal-700 shadow">Join Existing Event</button>
-                <button id="auth-tab-register" onclick="toggleAuthMode(true)" class="flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800">Register New Event</button>
+                <p id="login-subtitle-desc" class="text-xs text-slate-500 mt-1">Enter your event secret code to log in</p>
             </div>
 
             <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
@@ -82,8 +70,12 @@
                     <input type="text" id="login-user-name" required placeholder="e.g. Alex Wong" class="w-full px-4 py-2.5 sm:py-3 bg-slate-50 border rounded-xl text-sm font-semibold focus:ring-2 focus:ring-teal-500">
                 </div>
 
-                <!-- Registration Mode Extra Fields -->
+                <!-- Registration Mode Extra Fields (Auto-unhidden if code not found) -->
                 <div id="register-extra-fields" class="hidden space-y-4 pt-2 border-t border-slate-100">
+                    <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium flex items-center gap-1.5">
+                        <i data-lucide="sparkles" class="w-4 h-4 text-amber-600 flex-shrink-0"></i>
+                        <span>New event code detected! Fill in details below to register.</span>
+                    </div>
                     <div>
                         <label class="block text-xs font-bold uppercase text-slate-600 mb-1"><i data-lucide="heading" class="w-3.5 h-3.5 inline text-teal-600"></i> Event Name</label>
                         <input type="text" id="register-event-name" placeholder="e.g. Weekend BBQ Party" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-semibold">
@@ -105,12 +97,16 @@
                 </button>
             </form>
 
-            <div class="mt-6 pt-4 border-t text-center text-xs text-slate-400">
-                <span>Quick Test Sample Codes:</span>
-                <div class="flex flex-wrap justify-center gap-1.5 mt-2">
-                    <button onclick="quickFill('BBQ2026', 'Alex')" class="px-2 py-1 bg-slate-100 text-slate-600 text-xs font-mono rounded border hover:bg-teal-50">BBQ2026 (Alex)</button>
-                    <button onclick="quickFill('BBQ2026', 'Chris')" class="px-2 py-1 bg-slate-100 text-slate-600 text-xs font-mono rounded border hover:bg-teal-50">BBQ2026 (Chris)</button>
-                    <button onclick="quickFill('CAMP2026', 'Sam')" class="px-2 py-1 bg-slate-100 text-slate-600 text-xs font-mono rounded border hover:bg-teal-50">CAMP2026 (Sam)</button>
+            <!-- Show/Hide Sample Codes (Default Hidden) -->
+            <div class="mt-6 pt-4 border-t text-center">
+                <button type="button" onclick="toggleSampleCodes()" class="text-xs font-bold text-teal-600 hover:text-teal-700 flex items-center justify-center gap-1 mx-auto transition-colors">
+                    <i data-lucide="eye" id="sample-code-icon" class="w-3.5 h-3.5"></i>
+                    <span id="sample-code-toggle-text">Show Sample Codes</span>
+                </button>
+                <div id="sample-codes-box" class="hidden flex-wrap justify-center gap-1.5 mt-3">
+                    <button type="button" onclick="quickFill('BBQ2026', 'Alex')" class="px-2 py-1 bg-slate-100 text-slate-600 text-xs font-mono rounded border hover:bg-teal-50">BBQ2026 (Alex)</button>
+                    <button type="button" onclick="quickFill('BBQ2026', 'Chris')" class="px-2 py-1 bg-slate-100 text-slate-600 text-xs font-mono rounded border hover:bg-teal-50">BBQ2026 (Chris)</button>
+                    <button type="button" onclick="quickFill('CAMP2026', 'Sam')" class="px-2 py-1 bg-slate-100 text-slate-600 text-xs font-mono rounded border hover:bg-teal-50">CAMP2026 (Sam)</button>
                 </div>
             </div>
         </section>
@@ -244,8 +240,8 @@
                 <button onclick="toggleAppInfoModal(false)" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <div class="text-xs text-slate-600 space-y-2 leading-relaxed">
-                <p><strong>1. Device Modes:</strong> Automatically switches between <strong>Compact Mode (Mobile)</strong> and <strong>Wide Mode (Desktop)</strong> based on screen size.</p>
-                <p><strong>2. Secret Code Pairing:</strong> Share the secret code (e.g. <code>BBQ2026</code>) with your friends so everyone connects to the same calendar.</p>
+                <p><strong>1. Automatic Layout:</strong> Automatically adapts layout for <strong>Mobile (Compact)</strong> or <strong>Desktop (Wide)</strong> devices.</p>
+                <p><strong>2. Secret Code Pairing:</strong> Enter an existing secret code (e.g. <code>BBQ2026</code>) to join immediately. Non-existing codes trigger automatic event registration.</p>
                 <p><strong>3. Draft Checkboxes & Saved Responses:</strong> Tap calendar boxes to check draft days. Tap <strong>Save Response</strong> to lock in your choices with a solid green background.</p>
                 <p><strong>4. ALL FREE Highlight:</strong> When all expected group members mark a day as free, it lights up with a golden <strong>ALL FREE 🎉</strong> banner!</p>
             </div>
