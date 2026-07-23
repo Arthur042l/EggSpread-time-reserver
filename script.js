@@ -12,11 +12,28 @@ const firebaseConfig = {
   measurementId: "G-454RH7QCTB"
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app); 
-const analytics = getAnalytics(app);
+// Safe Firebase Initialization
+let app = null;
+let auth = null;
+let db = null;
+let isCloudActive = false;
+
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+try {
+    if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+        const firebaseConfig = JSON.parse(__firebase_config);
+        if (firebaseConfig && firebaseConfig.apiKey) {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            isCloudActive = true;
+        }
+    }
+} catch (err) {
+    console.warn("Firebase init notice: Falling back to offline/local mode.", err);
+    isCloudActive = false;
+}
 
 // Default Fallback Database
 const DEFAULT_DATABASE = {
@@ -41,26 +58,25 @@ const DEFAULT_DATABASE = {
     }
 };
 
-// App State
+// App Runtime State
 let localDb = loadLocalDatabase();
 let currentSecretCode = null;
 let currentUserName = null;
 let mySelectedDates = new Set();
 let calCurrentDate = new Date(2026, 7, 1);
 let eventUnsubscribe = null;
-let isCloudActive = false;
 
 // Authenticate on load
 async function initAuth() {
+    if (!auth || !isCloudActive) return;
     try {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
             await signInWithCustomToken(auth, __initial_auth_token);
         } else {
             await signInAnonymously(auth);
         }
-        isCloudActive = true;
     } catch (e) {
-        console.warn("Cloud auth notice: Operating in offline/local fallback mode.", e);
+        console.warn("Cloud auth notice: Operating in offline mode.", e);
         isCloudActive = false;
     }
 }
@@ -80,34 +96,38 @@ function saveLocalDatabase() {
 // Firestore Real-time Listener
 function listenToCloudEvent(code) {
     if (eventUnsubscribe) eventUnsubscribe();
-    if (!isCloudActive) return;
+    if (!isCloudActive || !db) return;
 
-    const eventDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', code);
-    
-    eventUnsubscribe = onSnapshot(eventDocRef, (docSnap) => {
-        if (docSnap.exists()) {
-            localDb[code] = docSnap.data();
-        } else {
-            const seedData = localDb[code] || {
-                name: `${code} Event`,
-                code: code,
-                groupSize: 5,
-                responses: {}
-            };
-            setDoc(eventDocRef, seedData, { merge: true });
-            localDb[code] = seedData;
-        }
-        saveLocalDatabase();
-        renderCurrentPage();
-    }, (error) => {
-        console.warn("Firestore snapshot error:", error);
-    });
+    try {
+        const eventDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', code);
+        
+        eventUnsubscribe = onSnapshot(eventDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+                localDb[code] = docSnap.data();
+            } else {
+                const seedData = localDb[code] || {
+                    name: `${code} Event`,
+                    code: code,
+                    groupSize: 5,
+                    responses: {}
+                };
+                setDoc(eventDocRef, seedData, { merge: true });
+                localDb[code] = seedData;
+            }
+            saveLocalDatabase();
+            renderCurrentPage();
+        }, (error) => {
+            console.warn("Firestore snapshot notice:", error);
+        });
+    } catch (err) {
+        console.warn("Unable to attach listener:", err);
+    }
 }
 
 // Sync Local State to Firestore
 async function syncEventToCloud(code) {
     saveLocalDatabase();
-    if (!isCloudActive || !code) return;
+    if (!isCloudActive || !db || !code) return;
 
     try {
         const eventDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', code);
@@ -117,19 +137,22 @@ async function syncEventToCloud(code) {
     }
 }
 
-// Bind Functions to Window object for HTML Onclick Handlers
+// Bind Global Functions for HTML Onclick / Onsubmit Handlers
 window.quickFill = function(code, name) {
-    document.getElementById('login-secret-code').value = code;
-    document.getElementById('login-user-name').value = name;
+    const codeEl = document.getElementById('login-secret-code');
+    const nameEl = document.getElementById('login-user-name');
+    if (codeEl) codeEl.value = code;
+    if (nameEl) nameEl.value = name;
 };
 
 window.handleLoginSubmit = function(e) {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
+    
     const codeInput = document.getElementById('login-secret-code').value.trim().toUpperCase();
     const nameInput = document.getElementById('login-user-name').value.trim();
     const rememberMe = document.getElementById('remember-me-checkbox').checked;
 
-    if (!codeInput || !nameInput) return;
+    if (!codeInput || !nameInput) return false;
 
     if (rememberMe) {
         localStorage.setItem('dateMatch_savedUser', JSON.stringify({ code: codeInput, name: nameInput }));
@@ -144,6 +167,7 @@ window.handleLoginSubmit = function(e) {
             groupSize: 5,
             responses: {}
         };
+        saveLocalDatabase();
     }
 
     currentSecretCode = codeInput;
@@ -162,6 +186,7 @@ window.handleLoginSubmit = function(e) {
 
     window.navigate('calendar');
     window.showToast(`Welcome, ${currentUserName}! Session active.`);
+    return false;
 };
 
 window.logout = function() {
@@ -204,7 +229,7 @@ function renderCurrentPage() {
     if (activePage === 'admin') renderAdminPage();
 }
 
-// Calendar Navigation & Toggles
+// Calendar Operations
 window.changeCalMonth = function(delta) {
     calCurrentDate = new Date(calCurrentDate.getFullYear(), calCurrentDate.getMonth() + delta, 1);
     renderCalendar();
@@ -234,7 +259,7 @@ window.submitFreeDays = async function() {
     localDb[currentSecretCode].responses[currentUserName] = Array.from(mySelectedDates);
     await syncEventToCloud(currentSecretCode);
 
-    window.showToast("Your free days saved & synced online! 🎉");
+    window.showToast("Your free days saved! 🎉");
     renderCalendar();
     checkAndTriggerConfetti();
 };
@@ -460,14 +485,14 @@ function renderAdminPage() {
 }
 
 window.handleSaveSettings = async function(e) {
-    e.preventDefault();
-    if (!currentSecretCode) return;
+    if (e && e.preventDefault) e.preventDefault();
+    if (!currentSecretCode) return false;
 
     const newName = document.getElementById('setting-event-name').value.trim();
     const newCode = document.getElementById('setting-event-code').value.trim().toUpperCase();
     const newSize = parseInt(document.getElementById('setting-group-size').value, 10);
 
-    if (!newName || !newCode || isNaN(newSize)) return;
+    if (!newName || !newCode || isNaN(newSize)) return false;
 
     const oldData = localDb[currentSecretCode];
     delete localDb[currentSecretCode];
@@ -484,6 +509,7 @@ window.handleSaveSettings = async function(e) {
     await syncEventToCloud(currentSecretCode);
     window.showToast("Event settings saved!");
     renderAdminPage();
+    return false;
 };
 
 window.clearEventResponses = async function() {
@@ -543,7 +569,7 @@ window.showToast = function(msg) {
     }, 3000);
 };
 
-// Start Auth Setup on Window Load
+// Start Setup on Window Load
 window.onload = function() {
     if (window.lucide) window.lucide.createIcons();
     const savedUser = localStorage.getItem('dateMatch_savedUser');
