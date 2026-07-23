@@ -29,6 +29,55 @@ try {
     console.warn("Firebase initialization warning:", err);
 }
 
+// Device Mode State (Compact vs Wide)
+let isCompactMode = window.innerWidth < 768;
+let manualOverrideMode = null; // null = auto, 'compact' or 'wide'
+
+function checkDeviceMode() {
+    if (manualOverrideMode) {
+        isCompactMode = manualOverrideMode === 'compact';
+    } else {
+        isCompactMode = window.innerWidth < 768;
+    }
+
+    const modeBadge = document.getElementById('device-mode-badge');
+    const modeIcon = document.getElementById('device-mode-icon');
+    
+    if (document.body) {
+        document.body.classList.toggle('mode-compact', isCompactMode);
+        document.body.classList.toggle('mode-wide', !isCompactMode);
+    }
+
+    if (modeBadge) {
+        modeBadge.innerText = isCompactMode ? 'Compact (Mobile)' : 'Wide (Desktop)';
+    }
+    if (modeIcon && window.lucide) {
+        modeIcon.setAttribute('data-lucide', isCompactMode ? 'smartphone' : 'monitor');
+        window.lucide.createIcons();
+    }
+}
+
+window.toggleManualDeviceMode = function() {
+    if (isCompactMode) {
+        manualOverrideMode = 'wide';
+    } else {
+        manualOverrideMode = 'compact';
+    }
+    checkDeviceMode();
+    renderCurrentPage();
+    window.showToast(`Switched to ${isCompactMode ? 'Compact Mobile' : 'Wide Desktop'} Mode`);
+};
+
+window.addEventListener('resize', () => {
+    if (!manualOverrideMode) {
+        const wasCompact = isCompactMode;
+        checkDeviceMode();
+        if (wasCompact !== isCompactMode) {
+            renderCurrentPage();
+        }
+    }
+});
+
 // Authenticate with Firebase before any Firestore operations
 async function initAuth() {
     if (!auth) return false;
@@ -91,7 +140,6 @@ async function listenToCloudEvent(code) {
 
     const isAuthenticated = await initAuth();
     if (!isAuthenticated || !db) {
-        // Fallback to local memory template
         activeEventData = DEFAULT_EVENT_TEMPLATE[code] || {
             name: `${code} Event`,
             code: code,
@@ -134,7 +182,6 @@ function updateUserStateFromActiveData() {
     if (activeEventData && activeEventData.responses && activeEventData.responses[currentUserName]) {
         const cloudDates = activeEventData.responses[currentUserName] || [];
         submittedDates = new Set(cloudDates);
-        // If user hasn't edited their draft, initialize draft with submitted dates
         if (mySelectedDates.size === 0) {
             mySelectedDates = new Set(cloudDates);
         }
@@ -195,7 +242,6 @@ window.handleLoginSubmit = async function(e) {
 
     if (!codeInput || !nameInput) return false;
 
-    // Save login credentials if remember me checked
     if (rememberMe) {
         localStorage.setItem('dateMatch_savedUser', JSON.stringify({ code: codeInput, name: nameInput }));
     } else {
@@ -209,13 +255,12 @@ window.handleLoginSubmit = async function(e) {
 
     const isAuthenticated = await initAuth();
 
-    // Verification check for Login Mode vs Register Mode
     if (!isRegisterMode && isAuthenticated && db) {
         try {
             const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', currentSecretCode);
             const docSnap = await getDoc(docRef);
             if (!docSnap.exists() && !DEFAULT_EVENT_TEMPLATE[currentSecretCode]) {
-                window.showToast("Event code not found! Please switch to Register to create it.");
+                window.showToast("Event code not found! Switch to Register to create it.");
                 return false;
             }
         } catch (err) {
@@ -223,7 +268,6 @@ window.handleLoginSubmit = async function(e) {
         }
     }
 
-    // Handle Registration Mode extra fields
     if (isRegisterMode) {
         const eventNameInput = document.getElementById('register-event-name')?.value.trim() || `${currentSecretCode} Event`;
         const groupSizeInput = parseInt(document.getElementById('register-group-size')?.value, 10) || 5;
@@ -236,7 +280,7 @@ window.handleLoginSubmit = async function(e) {
         };
 
         await syncEventToCloud(currentSecretCode, newEventObj);
-        window.showToast(`New event "${eventNameInput}" registered successfully! 🎉`);
+        window.showToast(`New event "${eventNameInput}" registered! 🎉`);
     }
 
     await listenToCloudEvent(currentSecretCode);
@@ -248,7 +292,7 @@ window.handleLoginSubmit = async function(e) {
     document.getElementById('header-event-badge').innerText = currentSecretCode;
 
     window.navigate('calendar');
-    window.showToast(`Welcome, ${currentUserName}! Joined event.`);
+    window.showToast(`Welcome, ${currentUserName}!`);
     return false;
 };
 
@@ -280,8 +324,8 @@ window.navigate = function(page) {
         const btn = document.getElementById(`tab-${p}`);
         if (btn) {
             btn.className = (p === page)
-                ? "px-3 py-1.5 rounded-lg text-teal-400 bg-slate-700 shadow"
-                : "px-3 py-1.5 rounded-lg text-slate-300 hover:text-white";
+                ? "px-2.5 sm:px-3 py-1.5 rounded-lg text-teal-400 bg-slate-700 shadow"
+                : "px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-300 hover:text-white";
         }
     });
 
@@ -314,7 +358,7 @@ window.toggleDateSelection = function(dateStr) {
     renderCalendar();
 };
 
-// Save Response (Submit Free Days)
+// Save Response
 window.submitFreeDays = async function() {
     if (!currentSecretCode || !currentUserName || !activeEventData) return;
 
@@ -354,7 +398,7 @@ function checkAndTriggerConfetti() {
     }
 }
 
-// Calendar Renderer with Draft Checkboxes & Submitted Green Backgrounds
+// Responsive Calendar Renderer (Compact Mode vs Wide Mode Adaptive UI)
 function renderCalendar() {
     if (!currentSecretCode || !activeEventData) return;
 
@@ -385,8 +429,8 @@ function renderCalendar() {
     for (let i = firstDayIndex - 1; i >= 0; i--) {
         const dayNum = prevMonthDays - i;
         const dCell = document.createElement('div');
-        dCell.className = "aspect-square rounded-2xl bg-slate-100/40 opacity-40 p-1.5 flex flex-col justify-between border border-transparent";
-        dCell.innerHTML = `<span class="text-xs text-slate-400 font-bold">${dayNum}</span>`;
+        dCell.className = "aspect-square rounded-xl bg-slate-100/40 opacity-30 p-1 flex flex-col justify-between border border-transparent";
+        dCell.innerHTML = `<span class="text-[10px] sm:text-xs text-slate-400 font-bold">${dayNum}</span>`;
         daysGrid.appendChild(dCell);
     }
 
@@ -410,47 +454,70 @@ function renderCalendar() {
 
         let cardBgClass = "bg-white hover:bg-teal-50/50 border-slate-200/80";
 
-        // Styling logic: All Free -> Golden Glow; Submitted -> Solid Green; Draft -> Checkbox Outline
         if (isAllFree) {
             cardBgClass = "all-free-glow text-slate-900 font-bold";
         } else if (isSubmittedResponse && isDraftSelected) {
-            cardBgClass = "bg-emerald-600 text-white font-bold border-emerald-700 shadow-md shadow-emerald-600/20";
+            cardBgClass = "bg-emerald-600 text-white font-bold border-emerald-700 shadow-sm";
         } else if (isDraftSelected) {
             cardBgClass = "bg-teal-50 border-2 border-teal-500 text-teal-900 font-semibold shadow-sm";
         }
 
-        dCell.className = `aspect-square rounded-2xl p-1.5 sm:p-2 flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden ${cardBgClass}`;
+        // Apply compact vs wide padding and corner rounding
+        const cellPaddingClass = isCompactMode ? 'p-1 rounded-xl' : 'p-2 rounded-2xl';
+        dCell.className = `aspect-square ${cellPaddingClass} flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden ${cardBgClass}`;
 
-        // Member Avatar Badges
+        // Member Badges (Condensed in Compact Mobile Mode)
         let avatarBadgesHtml = '';
         if (freeMembers.length > 0) {
-            avatarBadgesHtml = `
-                <div class="flex flex-wrap gap-1 mt-1 max-h-[42px] overflow-hidden">
-                    ${freeMembers.map(m => `
-                        <span class="text-[10px] px-1.5 py-0.5 rounded-md font-bold truncate max-w-[55px] ${
-                            isAllFree 
-                                ? 'bg-slate-900/90 text-amber-300' 
-                                : (m === currentUserName 
-                                    ? (isSubmittedResponse ? 'bg-emerald-900 text-emerald-100' : 'bg-teal-700 text-white') 
-                                    : 'bg-slate-200/80 text-slate-700')
-                        }" title="${m}">
-                            ${m}
-                        </span>
-                    `).join('')}
-                </div>
-            `;
+            if (isCompactMode) {
+                // Mini dots/initials for mobile
+                avatarBadgesHtml = `
+                    <div class="flex flex-wrap gap-0.5 mt-0.5 max-h-[22px] overflow-hidden">
+                        ${freeMembers.map(m => `
+                            <span class="text-[9px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold ${
+                                isAllFree 
+                                    ? 'bg-slate-900 text-amber-300' 
+                                    : (m === currentUserName ? 'bg-emerald-800 text-white' : 'bg-slate-200 text-slate-700')
+                            }" title="${m}">
+                                ${m.charAt(0).toUpperCase()}
+                            </span>
+                        `).join('')}
+                    </div>
+                `;
+            } else {
+                // Full name tags for wide desktop
+                avatarBadgesHtml = `
+                    <div class="flex flex-wrap gap-1 mt-1 max-h-[42px] overflow-hidden">
+                        ${freeMembers.map(m => `
+                            <span class="text-[10px] px-1.5 py-0.5 rounded-md font-bold truncate max-w-[55px] ${
+                                isAllFree 
+                                    ? 'bg-slate-900/90 text-amber-300' 
+                                    : (m === currentUserName 
+                                        ? (isSubmittedResponse ? 'bg-emerald-900 text-emerald-100' : 'bg-teal-700 text-white') 
+                                        : 'bg-slate-200/80 text-slate-700')
+                            }" title="${m}">
+                                ${m}
+                            </span>
+                        `).join('')}
+                    </div>
+                `;
+            }
         }
 
-        // Checkbox Indicator for Draft / Submitted Status
+        // Indicator Icon Logic
         let statusIndicator = '';
         if (isAllFree) {
-            statusIndicator = '<span class="text-[10px] font-black tracking-tighter px-1 py-0.5 bg-slate-900 text-amber-300 rounded-md">ALL FREE</span>';
+            statusIndicator = isCompactMode 
+                ? '<span class="text-[8px] font-black bg-slate-900 text-amber-300 px-1 py-0.2 rounded">100%</span>' 
+                : '<span class="text-[10px] font-black tracking-tighter px-1 py-0.5 bg-slate-900 text-amber-300 rounded-md">ALL FREE</span>';
         } else if (isSubmittedResponse && isDraftSelected) {
-            statusIndicator = '<span class="text-[10px] font-bold px-1.5 py-0.5 bg-emerald-800 text-emerald-100 rounded-md flex items-center gap-0.5"><i data-lucide="check" class="w-3 h-3"></i> Saved</span>';
+            statusIndicator = isCompactMode 
+                ? '<i data-lucide="check" class="w-3 h-3 text-white"></i>'
+                : '<span class="text-[10px] font-bold px-1.5 py-0.5 bg-emerald-800 text-emerald-100 rounded-md flex items-center gap-0.5"><i data-lucide="check" class="w-3 h-3"></i> Saved</span>';
         } else if (isDraftSelected) {
-            statusIndicator = '<i data-lucide="check-square" class="w-4 h-4 text-teal-600"></i>';
+            statusIndicator = '<i data-lucide="check-square" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teal-600"></i>';
         } else {
-            statusIndicator = '<i data-lucide="square" class="w-4 h-4 text-slate-300 hover:text-teal-400"></i>';
+            statusIndicator = '<i data-lucide="square" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-300"></i>';
         }
 
         dCell.innerHTML = `
@@ -488,7 +555,7 @@ function renderMemberList() {
     container.innerHTML = '';
 
     const members = Object.keys(responses);
-    document.getElementById('member-list-count').innerText = `${members.length} / ${eventObj.groupSize} expected members responded`;
+    document.getElementById('member-list-count').innerText = `${members.length} / ${eventObj.groupSize} expected responded`;
 
     if (members.length === 0) {
         container.innerHTML = `<div class="col-span-2 text-center py-8 text-xs text-slate-400">No members have submitted availability yet.</div>`;
@@ -498,7 +565,7 @@ function renderMemberList() {
     members.forEach(mName => {
         const dates = responses[mName] || [];
         const card = document.createElement('div');
-        card.className = "bg-slate-50 border border-slate-200 p-4 rounded-2xl flex flex-col justify-between gap-3";
+        card.className = "bg-slate-50 border border-slate-200 p-3.5 sm:p-4 rounded-2xl flex flex-col justify-between gap-3";
 
         card.innerHTML = `
             <div class="flex items-center justify-between">
@@ -565,7 +632,7 @@ function renderAdminPage() {
                     <span>${dateStr}</span>
                     ${isAllFree ? '<span class="px-1.5 py-0.2 bg-amber-400 text-slate-900 font-sans text-[10px] rounded font-black">100% ALL FREE</span>' : ''}
                 </div>
-                <div class="w-32 bg-slate-200 h-1.5 rounded-full mt-1.5 overflow-hidden">
+                <div class="w-28 sm:w-32 bg-slate-200 h-1.5 rounded-full mt-1.5 overflow-hidden">
                     <div class="bg-teal-500 h-full rounded-full" style="width: ${percent}%"></div>
                 </div>
             </div>
@@ -672,15 +739,16 @@ window.showToast = function(msg) {
     }, 3000);
 };
 
-// Toggle App Info Modal
 window.toggleAppInfoModal = function(show) {
     const modal = document.getElementById('app-info-modal');
     if (modal) modal.classList.toggle('hidden', !show);
 };
 
-// Check for "Remember Me" credentials in LocalStorage on startup
+// Check device screen size and saved login details on load
 window.onload = function() {
     if (window.lucide) window.lucide.createIcons();
+    checkDeviceMode();
+
     const savedUser = localStorage.getItem('dateMatch_savedUser');
     if (savedUser) {
         try {
