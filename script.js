@@ -1,3 +1,52 @@
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";  
+  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyDm0L6F6CGmrbsESTMLhOek74a5ttySP04",
+    authDomain: "eggspread-time-reserver.firebaseapp.com",
+    projectId: "eggspread-time-reserver",
+    storageBucket: "eggspread-time-reserver.firebasestorage.app",
+    messagingSenderId: "792367749553",
+    appId: "1:792367749553:web:2983034ea8cc356bcf4590",
+    measurementId: "G-454RH7QCTB"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+//MARK: Gemini Test
+// 4. 登入 Firebase 匿名帳號
+signInAnonymously(auth);
+
+// 5. 監聽特定 Event 密碼的即時雲端資料
+function listenToEventCloud(eventCode) {
+    const docRef = doc(db, 'events', eventCode);
+    onSnapshot(docRef, (snapshot) => {
+        if (snapshot.exists()) {
+            db[eventCode] = snapshot.data(); // 即時更新本地數據
+            renderCalendar();                 // 重新繪畫日曆
+        }
+    });
+}
+
+// 6. 儲存時將資料推送到雲端
+async function saveToCloud(eventCode, eventData) {
+    const docRef = doc(db, 'events', eventCode);
+    await setDoc(docRef, eventData, { merge: true });
+}
+
+</script>
+
 // Default Mock Database State
 const DEFAULT_DATABASE = {
     "BBQ2026": {
