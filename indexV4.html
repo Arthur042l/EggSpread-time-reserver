@@ -29,11 +29,6 @@
             </div>
 
             <div id="nav-actions" class="flex items-center space-x-1.5 sm:space-x-3">
-                <!-- App Info Button -->
-                <button onclick="toggleAppInfoModal(true)" class="p-1.5 sm:p-2 bg-slate-800 hover:bg-slate-700 text-teal-300 rounded-xl border border-slate-700 transition-colors" title="App Info">
-                    <i data-lucide="help-circle" class="w-4 h-4"></i>
-                </button>
-
                 <nav class="flex bg-slate-800/80 p-0.5 sm:p-1 rounded-xl border border-slate-700/50 text-[11px] sm:text-xs font-semibold">
                     <button id="tab-calendar" onclick="navigate('calendar')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-teal-400 bg-slate-700 shadow"><i data-lucide="calendar" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> Calendar</span></button>
                     <button id="tab-list" onclick="navigate('list')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-300 hover:text-white"><i data-lucide="list" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> Members</span></button>
@@ -56,26 +51,24 @@
             <div class="text-center mb-6">
                 <div class="inline-flex p-3 bg-teal-500/10 text-teal-600 rounded-2xl mb-2 sm:mb-3"><i data-lucide="calendar-heart" class="w-7 h-7 sm:w-8 sm:h-8"></i></div>
                 <h2 class="text-xl sm:text-2xl font-bold text-slate-900">Find Free Days Together</h2>
-                <p id="login-subtitle-desc" class="text-xs text-slate-500 mt-1">Enter your event secret code to log in</p>
+                <p id="login-subtitle-desc" class="text-xs text-slate-500 mt-1">Join an existing event or create a new one</p>
+            </div>
+
+            <!-- Join vs Create Event Toggle Bar -->
+            <div class="bg-slate-100 p-1 rounded-xl flex mb-5 border border-slate-200">
+                <button type="button" id="auth-tab-join" onclick="setAuthMode('join')" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-white text-teal-700 shadow transition-all">Join Event</button>
+                <button type="button" id="auth-tab-create" onclick="setAuthMode('create')" class="flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800 transition-all">Create Event</button>
             </div>
 
             <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                <!-- Field 1: Secret Code -->
                 <div>
                     <label class="block text-xs font-bold uppercase text-slate-600 mb-1"><i data-lucide="key-round" class="w-3.5 h-3.5 inline text-teal-600"></i> Event Secret Code</label>
                     <input type="text" id="login-secret-code" required placeholder="e.g. BBQ2026" class="w-full px-4 py-2.5 sm:py-3 bg-slate-50 border rounded-xl text-sm font-mono uppercase font-bold focus:ring-2 focus:ring-teal-500">
                 </div>
 
-                <div>
-                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1"><i data-lucide="user" class="w-3.5 h-3.5 inline text-teal-600"></i> Your Name</label>
-                    <input type="text" id="login-user-name" required placeholder="e.g. Alex Wong" class="w-full px-4 py-2.5 sm:py-3 bg-slate-50 border rounded-xl text-sm font-semibold focus:ring-2 focus:ring-teal-500">
-                </div>
-
-                <!-- Registration Mode Extra Fields (Auto-unhidden if code not found) -->
+                <!-- Registration Mode Extra Fields (Unhidden in Create Mode) -->
                 <div id="register-extra-fields" class="hidden space-y-4 pt-2 border-t border-slate-100">
-                    <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium flex items-center gap-1.5">
-                        <i data-lucide="sparkles" class="w-4 h-4 text-amber-600 flex-shrink-0"></i>
-                        <span>New event code detected! Fill in details below to register.</span>
-                    </div>
                     <div>
                         <label class="block text-xs font-bold uppercase text-slate-600 mb-1"><i data-lucide="heading" class="w-3.5 h-3.5 inline text-teal-600"></i> Event Name</label>
                         <input type="text" id="register-event-name" placeholder="e.g. Weekend BBQ Party" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-semibold">
@@ -87,8 +80,15 @@
                     </div>
                 </div>
 
+                <!-- Field 2 / Lowest Field Box: Your Name -->
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1"><i data-lucide="user" class="w-3.5 h-3.5 inline text-teal-600"></i> Your Name</label>
+                    <input type="text" id="login-user-name" required placeholder="e.g. Alex Wong" class="w-full px-4 py-2.5 sm:py-3 bg-slate-50 border rounded-xl text-sm font-semibold focus:ring-2 focus:ring-teal-500">
+                </div>
+
+                <!-- Remember Me (Default OFF) -->
                 <label class="flex items-center space-x-2 cursor-pointer pt-1">
-                    <input type="checkbox" id="remember-me-checkbox" checked class="w-4 h-4 text-teal-600 rounded border-slate-300">
+                    <input type="checkbox" id="remember-me-checkbox" class="w-4 h-4 text-teal-600 rounded border-slate-300">
                     <span class="text-xs font-semibold text-slate-600">Remember me on this device</span>
                 </label>
 
@@ -230,6 +230,11 @@
 
     </main>
 
+    <!-- FLOATING INFO BUTTON AT BOTTOM RIGHT CORNER -->
+    <button onclick="toggleAppInfoModal(true)" class="fixed bottom-6 right-6 z-40 p-3.5 bg-slate-900/90 hover:bg-slate-800 text-teal-300 rounded-full border border-slate-700 shadow-2xl flex items-center justify-center transition-all transform hover:scale-105" title="App Info">
+        <i data-lucide="help-circle" class="w-6 h-6"></i>
+    </button>
+
     <!-- APP INFO MODAL -->
     <div id="app-info-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl border space-y-3.5 relative">
@@ -241,7 +246,7 @@
             </div>
             <div class="text-xs text-slate-600 space-y-2 leading-relaxed">
                 <p><strong>1. Automatic Layout:</strong> Automatically adapts layout for <strong>Mobile (Compact)</strong> or <strong>Desktop (Wide)</strong> devices.</p>
-                <p><strong>2. Secret Code Pairing:</strong> Enter an existing secret code (e.g. <code>BBQ2026</code>) to join immediately. Non-existing codes trigger automatic event registration.</p>
+                <p><strong>2. Secret Code Pairing:</strong> Toggle between <strong>Join Event</strong> or <strong>Create Event</strong> to log into or register a calendar.</p>
                 <p><strong>3. Draft Checkboxes & Saved Responses:</strong> Tap calendar boxes to check draft days. Tap <strong>Save Response</strong> to lock in your choices with a solid green background.</p>
                 <p><strong>4. ALL FREE Highlight:</strong> When all expected group members mark a day as free, it lights up with a golden <strong>ALL FREE 🎉</strong> banner!</p>
             </div>
@@ -249,8 +254,8 @@
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-6 right-6 px-4 py-3 bg-slate-900 text-white text-xs font-semibold rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-2 transition-all transform translate-y-16 opacity-0 z-50">
+    <!-- Toast Notification (Positioned clear of bottom-right info button) -->
+    <div id="toast" class="fixed bottom-20 right-6 px-4 py-3 bg-slate-900 text-white text-xs font-semibold rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-2 transition-all transform translate-y-16 opacity-0 z-50">
         <i data-lucide="info" id="toast-icon" class="w-4 h-4 text-teal-400"></i>
         <span id="toast-msg">Notification Message</span>
     </div>
