@@ -3,14 +3,14 @@ import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/1
 import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
  
 const firebaseConfig = {
-  apiKey: "AIzaSyDm0L6F6CGmrbsESTMLhOek74a5ttySP04",
-  authDomain: "eggspread-time-reserver.firebaseapp.com",
-  projectId: "eggspread-time-reserver",
-  storageBucket: "eggspread-time-reserver.firebasestorage.app",
-  messagingSenderId: "792367749553",
-  appId: "1:792367749553:web:2983034ea8cc356bcf4590",
-  measurementId: "G-454RH7QCTB"
-};
+    apiKey: "AIzaSyDm0L6F6CGmrbsESTMLhOek74a5ttySP04",
+    authDomain: "eggspread-time-reserver.firebaseapp.com",
+    projectId: "eggspread-time-reserver",
+    storageBucket: "eggspread-time-reserver.firebasestorage.app",
+    messagingSenderId: "792367749553",
+    appId: "1:792367749553:web:365c504ae65ccc7fcf4590",
+    measurementId: "G-LLG556KH52"
+  };
 
 // Safe Firebase Initialization
 let app = null;
