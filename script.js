@@ -29,56 +29,26 @@ try {
     console.warn("Firebase initialization warning:", err);
 }
 
-// Device Mode State (Compact vs Wide)
+// Automatic Device Mode Detection (No manual toggle button)
 let isCompactMode = window.innerWidth < 768;
-let manualOverrideMode = null; // null = auto, 'compact' or 'wide'
 
 function checkDeviceMode() {
-    if (manualOverrideMode) {
-        isCompactMode = manualOverrideMode === 'compact';
-    } else {
-        isCompactMode = window.innerWidth < 768;
-    }
-
-    const modeBadge = document.getElementById('device-mode-badge');
-    const modeIcon = document.getElementById('device-mode-icon');
-    
+    isCompactMode = window.innerWidth < 768;
     if (document.body) {
         document.body.classList.toggle('mode-compact', isCompactMode);
         document.body.classList.toggle('mode-wide', !isCompactMode);
     }
-
-    if (modeBadge) {
-        modeBadge.innerText = isCompactMode ? 'Compact (Mobile)' : 'Wide (Desktop)';
-    }
-    if (modeIcon && window.lucide) {
-        modeIcon.setAttribute('data-lucide', isCompactMode ? 'smartphone' : 'monitor');
-        window.lucide.createIcons();
-    }
 }
 
-window.toggleManualDeviceMode = function() {
-    if (isCompactMode) {
-        manualOverrideMode = 'wide';
-    } else {
-        manualOverrideMode = 'compact';
-    }
-    checkDeviceMode();
-    renderCurrentPage();
-    window.showToast(`Switched to ${isCompactMode ? 'Compact Mobile' : 'Wide Desktop'} Mode`);
-};
-
 window.addEventListener('resize', () => {
-    if (!manualOverrideMode) {
-        const wasCompact = isCompactMode;
-        checkDeviceMode();
-        if (wasCompact !== isCompactMode) {
-            renderCurrentPage();
-        }
+    const wasCompact = isCompactMode;
+    checkDeviceMode();
+    if (wasCompact !== isCompactMode) {
+        renderCurrentPage();
     }
 });
 
-// Authenticate with Firebase before any Firestore operations
+// Authenticate with Firebase before Firestore operations
 async function initAuth() {
     if (!auth) return false;
     if (auth.currentUser) return true;
@@ -93,7 +63,7 @@ async function initAuth() {
                 }
                 return true;
             } catch (e) {
-                console.warn("Cloud Auth Notice: Could not authenticate with Firebase.", e);
+                console.warn("Cloud Auth Notice: Operating in local mode.", e);
                 return false;
             }
         })();
@@ -101,7 +71,7 @@ async function initAuth() {
     return await authPromise;
 }
 
-// Default Fallback Template when creating a brand new event offline
+// Default Fallback Template
 const DEFAULT_EVENT_TEMPLATE = {
     "BBQ2026": {
         name: "Weekend BBQ Party",
@@ -128,8 +98,8 @@ const DEFAULT_EVENT_TEMPLATE = {
 let activeEventData = null;
 let currentSecretCode = null;
 let currentUserName = null;
-let mySelectedDates = new Set(); // Draft dates
-let submittedDates = new Set();  // Confirmed/Saved dates
+let mySelectedDates = new Set(); 
+let submittedDates = new Set();  
 let calCurrentDate = new Date(2026, 7, 1);
 let eventUnsubscribe = null;
 let isRegisterMode = false;
@@ -204,35 +174,32 @@ async function syncEventToCloud(code, updatedEventData) {
     }
 }
 
-// Toggle Register vs Login View
-window.toggleAuthMode = function(isRegister) {
-    isRegisterMode = isRegister;
-    const registerFields = document.getElementById('register-extra-fields');
-    const submitBtnText = document.getElementById('login-submit-btn-text');
-    const authTabLogin = document.getElementById('auth-tab-login');
-    const authTabRegister = document.getElementById('auth-tab-register');
+// Show / Hide Sample Codes Toggle
+window.toggleSampleCodes = function() {
+    const box = document.getElementById('sample-codes-box');
+    const text = document.getElementById('sample-code-toggle-text');
+    const icon = document.getElementById('sample-code-icon');
 
-    if (registerFields) registerFields.classList.toggle('hidden', !isRegister);
-    if (submitBtnText) submitBtnText.innerText = isRegister ? 'Register & Join Event' : 'Enter Event Calendar';
-
-    if (authTabLogin && authTabRegister) {
-        authTabLogin.className = !isRegister 
-            ? "flex-1 py-1.5 text-xs font-bold rounded-lg bg-white text-teal-700 shadow" 
-            : "flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800";
-        authTabRegister.className = isRegister 
-            ? "flex-1 py-1.5 text-xs font-bold rounded-lg bg-white text-teal-700 shadow" 
-            : "flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800";
+    if (box) {
+        const isHidden = box.classList.contains('hidden');
+        box.classList.toggle('hidden', !isHidden);
+        box.classList.toggle('flex', isHidden);
+        if (text) text.innerText = isHidden ? 'Hide Sample Codes' : 'Show Sample Codes';
+        if (icon && window.lucide) {
+            icon.setAttribute('data-lucide', isHidden ? 'eye-off' : 'eye');
+            window.lucide.createIcons();
+        }
     }
 };
 
 window.quickFill = function(code, name) {
-    window.toggleAuthMode(false);
     const codeEl = document.getElementById('login-secret-code');
     const nameEl = document.getElementById('login-user-name');
     if (codeEl) codeEl.value = code;
     if (nameEl) nameEl.value = name;
 };
 
+// Handle Login with Auto-Register fallback
 window.handleLoginSubmit = async function(e) {
     if (e && e.preventDefault) e.preventDefault();
     
@@ -250,24 +217,41 @@ window.handleLoginSubmit = async function(e) {
 
     currentSecretCode = codeInput;
     currentUserName = nameInput;
-    mySelectedDates.clear();
-    submittedDates.clear();
 
     const isAuthenticated = await initAuth();
 
-    if (!isRegisterMode && isAuthenticated && db) {
-        try {
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', currentSecretCode);
-            const docSnap = await getDoc(docRef);
-            if (!docSnap.exists() && !DEFAULT_EVENT_TEMPLATE[currentSecretCode]) {
-                window.showToast("Event code not found! Switch to Register to create it.");
-                return false;
+    // If not in registration mode yet, check if event code exists
+    if (!isRegisterMode) {
+        let exists = false;
+        if (DEFAULT_EVENT_TEMPLATE[currentSecretCode]) {
+            exists = true;
+        } else if (isAuthenticated && db) {
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', currentSecretCode);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) exists = true;
+            } catch (err) {
+                console.warn("Doc check error:", err);
             }
-        } catch (err) {
-            console.warn("Verification check fallback:", err);
+        }
+
+        // Restrict login to existing events only -> Switch to register if code doesn't exist
+        if (!exists) {
+            isRegisterMode = true;
+            const regFields = document.getElementById('register-extra-fields');
+            const submitText = document.getElementById('login-submit-btn-text');
+            const desc = document.getElementById('login-subtitle-desc');
+
+            if (regFields) regFields.classList.remove('hidden');
+            if (submitText) submitText.innerText = 'Register & Join Event';
+            if (desc) desc.innerText = 'Complete event details below to register!';
+
+            window.showToast("Event code not found. Switched to Registration Mode!");
+            return false;
         }
     }
 
+    // Register mode submission
     if (isRegisterMode) {
         const eventNameInput = document.getElementById('register-event-name')?.value.trim() || `${currentSecretCode} Event`;
         const groupSizeInput = parseInt(document.getElementById('register-group-size')?.value, 10) || 5;
@@ -283,6 +267,8 @@ window.handleLoginSubmit = async function(e) {
         window.showToast(`New event "${eventNameInput}" registered! 🎉`);
     }
 
+    mySelectedDates.clear();
+    submittedDates.clear();
     await listenToCloudEvent(currentSecretCode);
 
     document.getElementById('user-avatar-initial').innerText = currentUserName.charAt(0).toUpperCase();
@@ -301,8 +287,17 @@ window.logout = function() {
     currentSecretCode = null;
     currentUserName = null;
     activeEventData = null;
+    isRegisterMode = false;
     mySelectedDates.clear();
     submittedDates.clear();
+
+    const regFields = document.getElementById('register-extra-fields');
+    const submitText = document.getElementById('login-submit-btn-text');
+    const desc = document.getElementById('login-subtitle-desc');
+    if (regFields) regFields.classList.add('hidden');
+    if (submitText) submitText.innerText = 'Enter Event Calendar';
+    if (desc) desc.innerText = 'Enter your event secret code to log in';
+
     document.getElementById('user-info-pill').classList.add('hidden');
     document.getElementById('user-info-pill').classList.remove('flex');
     window.navigate('login');
@@ -398,7 +393,6 @@ function checkAndTriggerConfetti() {
     }
 }
 
-// Responsive Calendar Renderer (Compact Mode vs Wide Mode Adaptive UI)
 function renderCalendar() {
     if (!currentSecretCode || !activeEventData) return;
 
@@ -425,7 +419,6 @@ function renderCalendar() {
 
     let allFreeDatesCount = 0;
 
-    // Previous month padding
     for (let i = firstDayIndex - 1; i >= 0; i--) {
         const dayNum = prevMonthDays - i;
         const dCell = document.createElement('div');
@@ -434,7 +427,6 @@ function renderCalendar() {
         daysGrid.appendChild(dCell);
     }
 
-    // Current month days
     for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         
@@ -462,15 +454,12 @@ function renderCalendar() {
             cardBgClass = "bg-teal-50 border-2 border-teal-500 text-teal-900 font-semibold shadow-sm";
         }
 
-        // Apply compact vs wide padding and corner rounding
         const cellPaddingClass = isCompactMode ? 'p-1 rounded-xl' : 'p-2 rounded-2xl';
         dCell.className = `aspect-square ${cellPaddingClass} flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden ${cardBgClass}`;
 
-        // Member Badges (Condensed in Compact Mobile Mode)
         let avatarBadgesHtml = '';
         if (freeMembers.length > 0) {
             if (isCompactMode) {
-                // Mini dots/initials for mobile
                 avatarBadgesHtml = `
                     <div class="flex flex-wrap gap-0.5 mt-0.5 max-h-[22px] overflow-hidden">
                         ${freeMembers.map(m => `
@@ -485,7 +474,6 @@ function renderCalendar() {
                     </div>
                 `;
             } else {
-                // Full name tags for wide desktop
                 avatarBadgesHtml = `
                     <div class="flex flex-wrap gap-1 mt-1 max-h-[42px] overflow-hidden">
                         ${freeMembers.map(m => `
@@ -504,7 +492,6 @@ function renderCalendar() {
             }
         }
 
-        // Indicator Icon Logic
         let statusIndicator = '';
         if (isAllFree) {
             statusIndicator = isCompactMode 
@@ -744,7 +731,6 @@ window.toggleAppInfoModal = function(show) {
     if (modal) modal.classList.toggle('hidden', !show);
 };
 
-// Check device screen size and saved login details on load
 window.onload = function() {
     if (window.lucide) window.lucide.createIcons();
     checkDeviceMode();
