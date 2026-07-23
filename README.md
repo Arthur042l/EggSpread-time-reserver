@@ -7,7 +7,7 @@ https://arthur042l.github.io/EggSpread-time-reserver/
 
 ## Task:
 - Login Page( secret code pairing for each event )
-- remember me ! ( name fill in )
+- V remember me ! ( name fill in )
 - date picker for free days
 - submit button
 - show who free data on each day boxes
