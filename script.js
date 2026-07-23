@@ -1,42 +1,59 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";  
-import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
- 
-const firebaseConfig = {
-    apiKey: "AIzaSyDm0L6F6CGmrbsESTMLhOek74a5ttySP04",
-    authDomain: "eggspread-time-reserver.firebaseapp.com",
-    projectId: "eggspread-time-reserver",
-    storageBucket: "eggspread-time-reserver.firebasestorage.app",
-    messagingSenderId: "792367749553",
-    appId: "1:792367749553:web:365c504ae65ccc7fcf4590",
-    measurementId: "G-LLG556KH52"
-  };
+import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 // Safe Firebase Initialization
 let app = null;
 let auth = null;
 let db = null;
-let isCloudActive = false;
+let authPromise = null;
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
+// Initialize Firebase
 try {
-    if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-        const firebaseConfig = JSON.parse(__firebase_config);
-        if (firebaseConfig && firebaseConfig.apiKey) {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            isCloudActive = true;
-        }
-    }
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+        apiKey: "AIzaSyDm0L6F6CGmrbsESTMLhOek74a5ttySP04",
+        authDomain: "eggspread-time-reserver.firebaseapp.com",
+        projectId: "eggspread-time-reserver",
+        storageBucket: "eggspread-time-reserver.firebasestorage.app",
+        messagingSenderId: "792367749553",
+        appId: "1:792367749553:web:365c504ae65ccc7fcf4590",
+        measurementId: "G-LLG556KH52"
+    };
+
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
 } catch (err) {
-    console.warn("Firebase init notice: Falling back to offline/local mode.", err);
-    isCloudActive = false;
+    console.warn("Firebase initialization warning:", err);
 }
 
-// Default Fallback Database
-const DEFAULT_DATABASE = {
+// Authenticate with Firebase before any Firestore operations
+async function initAuth() {
+    if (!auth) return false;
+    if (auth.currentUser) return true;
+
+    if (!authPromise) {
+        authPromise = (async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                return true;
+            } catch (e) {
+                console.warn("Cloud Auth Notice: Could not authenticate with Firebase.", e);
+                return false;
+            }
+        })();
+    }
+    return await authPromise;
+}
+
+// Default Fallback Template when creating a brand new event on the Cloud
+const DEFAULT_EVENT_TEMPLATE = {
     "BBQ2026": {
         name: "Weekend BBQ Party",
         code: "BBQ2026",
@@ -58,86 +75,80 @@ const DEFAULT_DATABASE = {
     }
 };
 
-// App Runtime State
-let localDb = loadLocalDatabase();
+// In-Memory Cloud Data Store (No localStorage used for event data)
+let activeEventData = null;
 let currentSecretCode = null;
 let currentUserName = null;
 let mySelectedDates = new Set();
 let calCurrentDate = new Date(2026, 7, 1);
 let eventUnsubscribe = null;
 
-// Authenticate on load
-async function initAuth() {
-    if (!auth || !isCloudActive) return;
-    try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-            await signInAnonymously(auth);
-        }
-    } catch (e) {
-        console.warn("Cloud auth notice: Operating in offline mode.", e);
-        isCloudActive = false;
-    }
-}
-
-function loadLocalDatabase() {
-    const saved = localStorage.getItem('dateMatch_db');
-    if (saved) {
-        try { return JSON.parse(saved); } catch(e){}
-    }
-    return DEFAULT_DATABASE;
-}
-
-function saveLocalDatabase() {
-    localStorage.setItem('dateMatch_db', JSON.stringify(localDb));
-}
-
-// Firestore Real-time Listener
-function listenToCloudEvent(code) {
+// Real-time Firestore Listener
+async function listenToCloudEvent(code) {
     if (eventUnsubscribe) eventUnsubscribe();
-    if (!isCloudActive || !db) return;
+
+    const isAuthenticated = await initAuth();
+    if (!isAuthenticated || !db) {
+        // Fallback to template if cloud unavailable
+        activeEventData = DEFAULT_EVENT_TEMPLATE[code] || {
+            name: `${code} Event`,
+            code: code,
+            groupSize: 5,
+            responses: {}
+        };
+        renderCurrentPage();
+        return;
+    }
 
     try {
         const eventDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', code);
         
         eventUnsubscribe = onSnapshot(eventDocRef, (docSnap) => {
             if (docSnap.exists()) {
-                localDb[code] = docSnap.data();
+                activeEventData = docSnap.data();
             } else {
-                const seedData = localDb[code] || {
+                // Initialize new event on Firestore Cloud
+                const initialData = DEFAULT_EVENT_TEMPLATE[code] || {
                     name: `${code} Event`,
                     code: code,
                     groupSize: 5,
                     responses: {}
                 };
-                setDoc(eventDocRef, seedData, { merge: true });
-                localDb[code] = seedData;
+                setDoc(eventDocRef, initialData, { merge: true });
+                activeEventData = initialData;
             }
-            saveLocalDatabase();
+
+            // Sync user's selected dates in memory with latest cloud response
+            if (activeEventData && activeEventData.responses && activeEventData.responses[currentUserName]) {
+                mySelectedDates = new Set(activeEventData.responses[currentUserName]);
+            }
+
             renderCurrentPage();
         }, (error) => {
-            console.warn("Firestore snapshot notice:", error);
+            console.warn("Firestore snapshot error:", error);
         });
     } catch (err) {
-        console.warn("Unable to attach listener:", err);
+        console.warn("Unable to attach Cloud listener:", err);
     }
 }
 
-// Sync Local State to Firestore
-async function syncEventToCloud(code) {
-    saveLocalDatabase();
-    if (!isCloudActive || !db || !code) return;
+// Sync Event Data to Firestore Cloud
+async function syncEventToCloud(code, updatedEventData) {
+    activeEventData = updatedEventData;
+    renderCurrentPage();
+
+    const isAuthenticated = await initAuth();
+    if (!isAuthenticated || !db || !code) return;
 
     try {
         const eventDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', code);
-        await setDoc(eventDocRef, localDb[code], { merge: true });
+        await setDoc(eventDocRef, updatedEventData, { merge: true });
     } catch (e) {
-        console.error("Firestore sync failed:", e);
+        console.error("Firestore cloud sync failed:", e);
     }
 }
 
-// Bind Global Functions for HTML Onclick / Onsubmit Handlers
+// Global functions attached to window for HTML onclick / onsubmit handlers
 window.quickFill = function(code, name) {
     const codeEl = document.getElementById('login-secret-code');
     const nameEl = document.getElementById('login-user-name');
@@ -145,7 +156,7 @@ window.quickFill = function(code, name) {
     if (nameEl) nameEl.value = name;
 };
 
-window.handleLoginSubmit = function(e) {
+window.handleLoginSubmit = async function(e) {
     if (e && e.preventDefault) e.preventDefault();
     
     const codeInput = document.getElementById('login-secret-code').value.trim().toUpperCase();
@@ -154,29 +165,19 @@ window.handleLoginSubmit = function(e) {
 
     if (!codeInput || !nameInput) return false;
 
+    // ONLY LOCAL STORAGE USE: Save or remove "Remember Me" credentials
     if (rememberMe) {
         localStorage.setItem('dateMatch_savedUser', JSON.stringify({ code: codeInput, name: nameInput }));
     } else {
         localStorage.removeItem('dateMatch_savedUser');
     }
 
-    if (!localDb[codeInput]) {
-        localDb[codeInput] = {
-            name: `${codeInput} Event`,
-            code: codeInput,
-            groupSize: 5,
-            responses: {}
-        };
-        saveLocalDatabase();
-    }
-
     currentSecretCode = codeInput;
     currentUserName = nameInput;
+    mySelectedDates.clear();
 
-    listenToCloudEvent(currentSecretCode);
-
-    const existingUserDates = (localDb[currentSecretCode].responses && localDb[currentSecretCode].responses[currentUserName]) || [];
-    mySelectedDates = new Set(existingUserDates);
+    // Fetch and subscribe directly from Cloud Firestore
+    await listenToCloudEvent(currentSecretCode);
 
     document.getElementById('user-avatar-initial').innerText = currentUserName.charAt(0).toUpperCase();
     document.getElementById('user-name-display').innerText = currentUserName;
@@ -185,7 +186,7 @@ window.handleLoginSubmit = function(e) {
     document.getElementById('header-event-badge').innerText = currentSecretCode;
 
     window.navigate('calendar');
-    window.showToast(`Welcome, ${currentUserName}! Session active.`);
+    window.showToast(`Welcome, ${currentUserName}! Connected to Cloud.`);
     return false;
 };
 
@@ -193,6 +194,7 @@ window.logout = function() {
     if (eventUnsubscribe) eventUnsubscribe();
     currentSecretCode = null;
     currentUserName = null;
+    activeEventData = null;
     mySelectedDates.clear();
     document.getElementById('user-info-pill').classList.add('hidden');
     document.getElementById('user-info-pill').classList.remove('flex');
@@ -229,7 +231,7 @@ function renderCurrentPage() {
     if (activePage === 'admin') renderAdminPage();
 }
 
-// Calendar Operations
+// Calendar Navigation & Toggles
 window.changeCalMonth = function(delta) {
     calCurrentDate = new Date(calCurrentDate.getFullYear(), calCurrentDate.getMonth() + delta, 1);
     renderCalendar();
@@ -249,27 +251,31 @@ window.toggleDateSelection = function(dateStr) {
     renderCalendar();
 };
 
+// Save Free Days to Cloud Firestore
 window.submitFreeDays = async function() {
-    if (!currentSecretCode || !currentUserName) return;
+    if (!currentSecretCode || !currentUserName || !activeEventData) return;
 
-    if (!localDb[currentSecretCode].responses) {
-        localDb[currentSecretCode].responses = {};
-    }
+    const updatedResponses = {
+        ...(activeEventData.responses || {}),
+        [currentUserName]: Array.from(mySelectedDates)
+    };
 
-    localDb[currentSecretCode].responses[currentUserName] = Array.from(mySelectedDates);
-    await syncEventToCloud(currentSecretCode);
+    const updatedEvent = {
+        ...activeEventData,
+        responses: updatedResponses
+    };
 
-    window.showToast("Your free days saved! 🎉");
-    renderCalendar();
+    await syncEventToCloud(currentSecretCode, updatedEvent);
+
+    window.showToast("Your free days saved to Cloud! 🎉");
     checkAndTriggerConfetti();
 };
 
 function checkAndTriggerConfetti() {
-    const eventObj = localDb[currentSecretCode];
-    if (!eventObj) return;
+    if (!activeEventData) return;
 
-    const groupGoal = eventObj.groupSize || 1;
-    const responses = eventObj.responses || {};
+    const groupGoal = activeEventData.groupSize || 1;
+    const responses = activeEventData.responses || {};
 
     const dateCounts = {};
     Object.values(responses).forEach(userDates => {
@@ -285,9 +291,9 @@ function checkAndTriggerConfetti() {
 }
 
 function renderCalendar() {
-    if (!currentSecretCode || !localDb[currentSecretCode]) return;
+    if (!currentSecretCode || !activeEventData) return;
 
-    const eventObj = localDb[currentSecretCode];
+    const eventObj = activeEventData;
     document.getElementById('event-title-display').innerText = eventObj.name;
     document.getElementById('event-code-tag').innerText = eventObj.code;
     document.getElementById('event-group-goal').innerText = eventObj.groupSize;
@@ -386,9 +392,9 @@ function renderCalendar() {
 }
 
 function renderMemberList() {
-    if (!currentSecretCode || !localDb[currentSecretCode]) return;
+    if (!currentSecretCode || !activeEventData) return;
 
-    const eventObj = localDb[currentSecretCode];
+    const eventObj = activeEventData;
     const responses = eventObj.responses || {};
     const container = document.getElementById('members-cards-container');
     container.innerHTML = '';
@@ -433,9 +439,9 @@ function renderMemberList() {
 }
 
 function renderAdminPage() {
-    if (!currentSecretCode || !localDb[currentSecretCode]) return;
+    if (!currentSecretCode || !activeEventData) return;
 
-    const eventObj = localDb[currentSecretCode];
+    const eventObj = activeEventData;
     document.getElementById('setting-event-name').value = eventObj.name;
     document.getElementById('setting-event-code').value = eventObj.code;
     document.getElementById('setting-group-size').value = eventObj.groupSize || 5;
@@ -486,7 +492,7 @@ function renderAdminPage() {
 
 window.handleSaveSettings = async function(e) {
     if (e && e.preventDefault) e.preventDefault();
-    if (!currentSecretCode) return false;
+    if (!currentSecretCode || !activeEventData) return false;
 
     const newName = document.getElementById('setting-event-name').value.trim();
     const newCode = document.getElementById('setting-event-code').value.trim().toUpperCase();
@@ -494,11 +500,8 @@ window.handleSaveSettings = async function(e) {
 
     if (!newName || !newCode || isNaN(newSize)) return false;
 
-    const oldData = localDb[currentSecretCode];
-    delete localDb[currentSecretCode];
-
-    localDb[newCode] = {
-        ...oldData,
+    const updatedEvent = {
+        ...activeEventData,
         name: newName,
         code: newCode,
         groupSize: newSize
@@ -506,28 +509,34 @@ window.handleSaveSettings = async function(e) {
 
     currentSecretCode = newCode;
     document.getElementById('header-event-badge').innerText = currentSecretCode;
-    await syncEventToCloud(currentSecretCode);
-    window.showToast("Event settings saved!");
+    await syncEventToCloud(currentSecretCode, updatedEvent);
+    window.showToast("Event settings saved to Cloud!");
     renderAdminPage();
     return false;
 };
 
 window.clearEventResponses = async function() {
     if (!confirm("Are you sure you want to clear all member responses for this event?")) return;
-    if (!currentSecretCode) return;
+    if (!currentSecretCode || !activeEventData) return;
 
-    localDb[currentSecretCode].responses = {};
+    const updatedEvent = {
+        ...activeEventData,
+        responses: {}
+    };
+
     mySelectedDates.clear();
-    await syncEventToCloud(currentSecretCode);
-    window.showToast("Member responses reset!");
+    await syncEventToCloud(currentSecretCode, updatedEvent);
+    window.showToast("Member responses reset on Cloud!");
     renderAdminPage();
 };
 
 window.exportEventJSON = function() {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(localDb, null, 2));
+    if (!activeEventData) return;
+    const exportObj = { [currentSecretCode]: activeEventData };
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj, null, 2));
     const dlAnchor = document.createElement('a');
     dlAnchor.setAttribute("href", dataStr);
-    dlAnchor.setAttribute("download", `DateMatch_Backup.json`);
+    dlAnchor.setAttribute("download", `DateMatch_${currentSecretCode}_Backup.json`);
     document.body.appendChild(dlAnchor);
     dlAnchor.click();
     dlAnchor.remove();
@@ -546,9 +555,13 @@ window.importEventJSON = function(e) {
     reader.onload = async function(evt) {
         try {
             const imported = JSON.parse(evt.target.result);
-            localDb = imported;
-            if (currentSecretCode) await syncEventToCloud(currentSecretCode);
-            window.showToast("Database successfully imported!");
+            if (imported && currentSecretCode && imported[currentSecretCode]) {
+                await syncEventToCloud(currentSecretCode, imported[currentSecretCode]);
+            } else if (imported) {
+                const firstKey = Object.keys(imported)[0];
+                if (firstKey) await syncEventToCloud(firstKey, imported[firstKey]);
+            }
+            window.showToast("Cloud Database successfully imported!");
             window.navigate('calendar');
         } catch(err) {
             window.showToast("Error reading JSON file format.");
@@ -569,7 +582,7 @@ window.showToast = function(msg) {
     }, 3000);
 };
 
-// Start Setup on Window Load
+// Check for "Remember Me" credentials in LocalStorage on startup
 window.onload = function() {
     if (window.lucide) window.lucide.createIcons();
     const savedUser = localStorage.getItem('dateMatch_savedUser');
