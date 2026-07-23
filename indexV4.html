@@ -28,7 +28,12 @@
                 </div>
             </div>
 
-            <div id="nav-actions" class="flex items-center space-x-3">
+            <div id="nav-actions" class="flex items-center space-x-2 sm:space-x-3">
+                <!-- App Info Button -->
+                <button onclick="toggleAppInfoModal(true)" class="p-2 bg-slate-800 hover:bg-slate-700 text-teal-300 rounded-xl border border-slate-700 transition-colors" title="App Info">
+                    <i data-lucide="help-circle" class="w-4 h-4"></i>
+                </button>
+
                 <nav class="flex bg-slate-800/80 p-1 rounded-xl border border-slate-700/50 text-xs font-semibold">
                     <button id="tab-calendar" onclick="navigate('calendar')" class="px-3 py-1.5 rounded-lg text-teal-400 bg-slate-700 shadow"><i data-lucide="calendar" class="w-3.5 h-3.5 inline mr-1"></i> Calendar</button>
                     <button id="tab-list" onclick="navigate('list')" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white"><i data-lucide="list" class="w-3.5 h-3.5 inline mr-1"></i> Members</button>
@@ -46,12 +51,18 @@
 
     <main class="max-w-7xl mx-auto px-4 pt-6">
 
-        <!-- LOGIN / JOIN EVENT PAGE -->
+        <!-- LOGIN / REGISTER EVENT PAGE -->
         <section id="page-login" class="max-w-md mx-auto my-12 bg-white/95 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-white/40">
-            <div class="text-center mb-8">
+            <div class="text-center mb-6">
                 <div class="inline-flex p-3 bg-teal-500/10 text-teal-600 rounded-2xl mb-3"><i data-lucide="calendar-heart" class="w-8 h-8"></i></div>
                 <h2 class="text-2xl font-bold text-slate-900">Find Free Days Together</h2>
-                <p class="text-xs text-slate-500 mt-1">Enter event secret code and name to join!</p>
+                <p class="text-xs text-slate-500 mt-1">Pair with your friend group using a Secret Code</p>
+            </div>
+
+            <!-- Login / Register Switcher Tabs -->
+            <div class="bg-slate-100 p-1 rounded-xl flex mb-6 border border-slate-200">
+                <button id="auth-tab-login" onclick="toggleAuthMode(false)" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-white text-teal-700 shadow">Join Existing Event</button>
+                <button id="auth-tab-register" onclick="toggleAuthMode(true)" class="flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800">Register New Event</button>
             </div>
 
             <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
@@ -59,25 +70,41 @@
                     <label class="block text-xs font-bold uppercase text-slate-600 mb-1"><i data-lucide="key-round" class="w-3.5 h-3.5 inline text-teal-600"></i> Event Secret Code</label>
                     <input type="text" id="login-secret-code" required placeholder="e.g. BBQ2026" class="w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm font-mono uppercase font-bold focus:ring-2 focus:ring-teal-500">
                 </div>
+
                 <div>
                     <label class="block text-xs font-bold uppercase text-slate-600 mb-1"><i data-lucide="user" class="w-3.5 h-3.5 inline text-teal-600"></i> Your Name</label>
                     <input type="text" id="login-user-name" required placeholder="e.g. Alex Wong" class="w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm font-semibold focus:ring-2 focus:ring-teal-500">
                 </div>
+
+                <!-- Registration Mode Extra Fields -->
+                <div id="register-extra-fields" class="hidden space-y-4 pt-2 border-t border-slate-100">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-600 mb-1"><i data-lucide="heading" class="w-3.5 h-3.5 inline text-teal-600"></i> Event Name</label>
+                        <input type="text" id="register-event-name" placeholder="e.g. Weekend BBQ Party" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-semibold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-600 mb-1"><i data-lucide="users" class="w-3.5 h-3.5 inline text-teal-600"></i> Expected Responders Count</label>
+                        <input type="number" id="register-group-size" min="1" max="50" value="5" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-bold">
+                        <span class="text-[11px] text-slate-400">Total friends in your group to reach 100% attendance</span>
+                    </div>
+                </div>
+
                 <label class="flex items-center space-x-2 cursor-pointer pt-1">
                     <input type="checkbox" id="remember-me-checkbox" checked class="w-4 h-4 text-teal-600 rounded border-slate-300">
                     <span class="text-xs font-semibold text-slate-600">Remember me on this browser</span>
                 </label>
-                <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2">
-                    <span>Enter Event Calendar</span><i data-lucide="arrow-right" class="w-4 h-4"></i>
+
+                <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all">
+                    <span id="login-submit-btn-text">Enter Event Calendar</span><i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </button>
             </form>
 
             <div class="mt-6 pt-4 border-t text-center text-xs text-slate-400">
-                <span>Sample Codes:</span>
+                <span>Quick Test Sample Codes:</span>
                 <div class="flex justify-center gap-2 mt-2">
-                    <button onclick="quickFill('BBQ2026', 'Alex')" class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-mono rounded border">BBQ2026 (Alex)</button>
-                    <button onclick="quickFill('BBQ2026', 'Chris')" class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-mono rounded border">BBQ2026 (Chris)</button>
-                    <button onclick="quickFill('CAMP2026', 'Sam')" class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-mono rounded border">CAMP2026 (Sam)</button>
+                    <button onclick="quickFill('BBQ2026', 'Alex')" class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-mono rounded border hover:bg-teal-50">BBQ2026 (Alex)</button>
+                    <button onclick="quickFill('BBQ2026', 'Chris')" class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-mono rounded border hover:bg-teal-50">BBQ2026 (Chris)</button>
+                    <button onclick="quickFill('CAMP2026', 'Sam')" class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-mono rounded border hover:bg-teal-50">CAMP2026 (Sam)</button>
                 </div>
             </div>
         </section>
@@ -90,15 +117,15 @@
                         <h2 id="event-title-display" class="text-2xl font-black text-slate-900">Event Title</h2>
                         <span id="event-code-tag" class="text-xs font-mono font-bold bg-teal-100 text-teal-800 px-2.5 py-1 rounded-lg border">CODE</span>
                     </div>
-                    <p class="text-xs text-slate-500 mt-1">Goal: <strong id="event-group-goal" class="text-slate-800">5</strong> members • Submitted: <strong id="event-submitted-count" class="text-teal-600">3</strong> members</p>
+                    <p class="text-xs text-slate-500 mt-1">Expected Goal: <strong id="event-group-goal" class="text-slate-800">5</strong> members • Responded: <strong id="event-submitted-count" class="text-teal-600">3</strong> members</p>
                 </div>
                 <div class="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border">
                     <div class="text-left text-xs">
                         <div class="font-bold text-slate-700">Select dates you are FREE:</div>
-                        <div class="text-slate-500">Tap dates on calendar, then submit</div>
+                        <div class="text-slate-500">Check boxes on calendar, then save</div>
                     </div>
-                    <button onclick="submitFreeDays()" class="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-bold rounded-xl shadow flex items-center gap-1.5">
-                        <i data-lucide="check-circle" class="w-4 h-4"></i><span>Submit Free Days</span>
+                    <button onclick="submitFreeDays()" class="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-1.5 transition-all">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i><span>Save Response</span>
                     </button>
                 </div>
             </div>
@@ -120,9 +147,9 @@
 
                 <!-- Legend -->
                 <div class="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-600 mb-4 pb-3 border-b">
-                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-teal-500"></span> Selected by You</span>
+                    <span class="flex items-center gap-1.5"><i data-lucide="check-square" class="w-4 h-4 text-teal-600"></i> Draft Selected</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-600"></span> Saved Response (Green)</span>
                     <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-400"></span> 100% ALL FREE! 🎉</span>
-                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-slate-200"></span> Others Free</span>
                 </div>
 
                 <!-- Weekdays Header -->
@@ -141,7 +168,7 @@
                 <div class="flex items-center justify-between mb-6 pb-4 border-b">
                     <div>
                         <h2 class="text-xl font-bold text-slate-900">Submitted Members Overview</h2>
-                        <p class="text-xs text-slate-500">List of all members and their selected free dates</p>
+                        <p class="text-xs text-slate-500">List of all members who filled the form and their free days</p>
                     </div>
                     <span id="member-list-count" class="px-3 py-1 bg-teal-100 text-teal-800 text-xs font-bold rounded-full">0 members</span>
                 </div>
@@ -155,8 +182,8 @@
                 <div class="lg:col-span-2 bg-white/90 backdrop-blur-xl p-6 rounded-3xl shadow-2xl border border-white/50 space-y-6">
                     <div class="flex items-center justify-between pb-4 border-b">
                         <div>
-                            <h2 class="text-xl font-bold text-slate-900">Event Settings</h2>
-                            <p class="text-xs text-slate-500">Configure total expected members and secret code</p>
+                            <h2 class="text-xl font-bold text-slate-900">Event Settings & Admin</h2>
+                            <p class="text-xs text-slate-500">Configure total expected members and secret code settings</p>
                         </div>
                         <span class="p-2 bg-teal-50 text-teal-600 rounded-xl"><i data-lucide="sliders" class="w-5 h-5"></i></span>
                     </div>
@@ -167,11 +194,11 @@
                             <input type="text" id="setting-event-name" required class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-semibold">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Secret Code</label>
+                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Code Settings (Secret Pairing Code)</label>
                             <input type="text" id="setting-event-code" required class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-mono font-bold uppercase">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Total Members in Group</label>
+                            <label class="block text-xs font-bold uppercase text-slate-600 mb-1">No. of Members Expected to Respond</label>
                             <div class="flex items-center gap-3">
                                 <input type="number" id="setting-group-size" min="1" max="50" required class="w-28 px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-bold">
                                 <span class="text-xs text-slate-500">Triggers the <strong class="text-amber-600">"ALL FREE! 🎉"</strong> indicator when reached.</span>
@@ -192,8 +219,8 @@
                 </div>
 
                 <div class="bg-white/90 backdrop-blur-xl p-6 rounded-3xl shadow-2xl border border-white/50 space-y-4">
-                    <h3 class="text-base font-bold text-slate-900 flex items-center gap-2"><i data-lucide="trophy" class="w-5 h-5 text-amber-500"></i> Best Match Dates</h3>
-                    <p class="text-xs text-slate-500">Dates sorted by highest attendance</p>
+                    <h3 class="text-base font-bold text-slate-900 flex items-center gap-2"><i data-lucide="trophy" class="w-5 h-5 text-amber-500"></i> Admin Dashboard</h3>
+                    <p class="text-xs text-slate-500">Best match dates sorted by highest response count</p>
                     <div id="leaderboard-container" class="space-y-2 max-h-96 overflow-y-auto pr-1"></div>
                 </div>
             </div>
@@ -201,15 +228,32 @@
 
     </main>
 
+    <!-- APP INFO MODAL -->
+    <div id="app-info-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border space-y-4 relative">
+            <div class="flex items-center justify-between border-b pb-3">
+                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i data-lucide="info" class="w-5 h-5 text-teal-600"></i> About DateMatch
+                </h3>
+                <button onclick="toggleAppInfoModal(false)" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="text-xs text-slate-600 space-y-2.5 leading-relaxed">
+                <p><strong>1. Secret Code Pairing:</strong> Share the secret code (e.g. <code>BBQ2026</code>) with your friends so everyone connects to the exact same calendar.</p>
+                <p><strong>2. Draft & Saved Responses:</strong> Tap calendar boxes to toggle draft checkboxes. When ready, tap <strong>Save Response</strong> to sync your free days online with a solid green background.</p>
+                <p><strong>3. ALL FREE Special Highlight:</strong> When all expected group members mark the same day as free, the date lights up with a glowing gold <strong>ALL FREE 🎉</strong> banner!</p>
+                <p><strong>4. Real-time Cloud Sync:</strong> All data syncs live via Firestore database across devices.</p>
+            </div>
+            <button onclick="toggleAppInfoModal(false)" class="w-full py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-slate-800">Got it!</button>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-6 right-6 px-4 py-3 bg-slate-900 text-white text-xs font-semibold rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-2 transition-all transform translate-y-16 opacity-0 z-50">
         <i data-lucide="info" id="toast-icon" class="w-4 h-4 text-teal-400"></i>
         <span id="toast-msg">Notification Message</span>
     </div>
 
-    <!-- Script File -->
-    <script type="module" src="script.js">
-        
-    </script>
+    <!-- Script File loaded as ES module -->
+    <script type="module" src="script.js"></script>
 </body>
 </html>
