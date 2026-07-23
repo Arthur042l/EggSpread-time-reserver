@@ -1,20 +1,21 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-// Firebase App Config Setup
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-    apiKey: "",
-    authDomain: "demo.firebaseapp.com",
-    projectId: "demo-project",
-    storageBucket: "demo.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:demo"
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";  
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+ 
+const firebaseConfig = {
+  apiKey: "AIzaSyDm0L6F6CGmrbsESTMLhOek74a5ttySP04",
+  authDomain: "eggspread-time-reserver.firebaseapp.com",
+  projectId: "eggspread-time-reserver",
+  storageBucket: "eggspread-time-reserver.firebasestorage.app",
+  messagingSenderId: "792367749553",
+  appId: "1:792367749553:web:2983034ea8cc356bcf4590",
+  measurementId: "G-454RH7QCTB"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+const db = getFirestore(app); 
+const analytics = getAnalytics(app);
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
 // Default Fallback Database
