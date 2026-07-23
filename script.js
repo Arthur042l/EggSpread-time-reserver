@@ -52,7 +52,7 @@ async function initAuth() {
     return await authPromise;
 }
 
-// Default Fallback Template when creating a brand new event on the Cloud
+// Default Fallback Template when creating a brand new event offline
 const DEFAULT_EVENT_TEMPLATE = {
     "BBQ2026": {
         name: "Weekend BBQ Party",
@@ -75,13 +75,15 @@ const DEFAULT_EVENT_TEMPLATE = {
     }
 };
 
-// In-Memory Cloud Data Store (No localStorage used for event data)
+// In-Memory App State
 let activeEventData = null;
 let currentSecretCode = null;
 let currentUserName = null;
-let mySelectedDates = new Set();
+let mySelectedDates = new Set(); // Draft dates
+let submittedDates = new Set();  // Confirmed/Saved dates
 let calCurrentDate = new Date(2026, 7, 1);
 let eventUnsubscribe = null;
+let isRegisterMode = false;
 
 // Real-time Firestore Listener
 async function listenToCloudEvent(code) {
@@ -89,13 +91,14 @@ async function listenToCloudEvent(code) {
 
     const isAuthenticated = await initAuth();
     if (!isAuthenticated || !db) {
-        // Fallback to template if cloud unavailable
+        // Fallback to local memory template
         activeEventData = DEFAULT_EVENT_TEMPLATE[code] || {
             name: `${code} Event`,
             code: code,
             groupSize: 5,
             responses: {}
         };
+        updateUserStateFromActiveData();
         renderCurrentPage();
         return;
     }
@@ -107,7 +110,6 @@ async function listenToCloudEvent(code) {
             if (docSnap.exists()) {
                 activeEventData = docSnap.data();
             } else {
-                // Initialize new event on Firestore Cloud
                 const initialData = DEFAULT_EVENT_TEMPLATE[code] || {
                     name: `${code} Event`,
                     code: code,
@@ -118,17 +120,24 @@ async function listenToCloudEvent(code) {
                 activeEventData = initialData;
             }
 
-            // Sync user's selected dates in memory with latest cloud response
-            if (activeEventData && activeEventData.responses && activeEventData.responses[currentUserName]) {
-                mySelectedDates = new Set(activeEventData.responses[currentUserName]);
-            }
-
+            updateUserStateFromActiveData();
             renderCurrentPage();
         }, (error) => {
             console.warn("Firestore snapshot error:", error);
         });
     } catch (err) {
         console.warn("Unable to attach Cloud listener:", err);
+    }
+}
+
+function updateUserStateFromActiveData() {
+    if (activeEventData && activeEventData.responses && activeEventData.responses[currentUserName]) {
+        const cloudDates = activeEventData.responses[currentUserName] || [];
+        submittedDates = new Set(cloudDates);
+        // If user hasn't edited their draft, initialize draft with submitted dates
+        if (mySelectedDates.size === 0) {
+            mySelectedDates = new Set(cloudDates);
+        }
     }
 }
 
@@ -148,8 +157,29 @@ async function syncEventToCloud(code, updatedEventData) {
     }
 }
 
-// Global functions attached to window for HTML onclick / onsubmit handlers
+// Toggle Register vs Login View
+window.toggleAuthMode = function(isRegister) {
+    isRegisterMode = isRegister;
+    const registerFields = document.getElementById('register-extra-fields');
+    const submitBtnText = document.getElementById('login-submit-btn-text');
+    const authTabLogin = document.getElementById('auth-tab-login');
+    const authTabRegister = document.getElementById('auth-tab-register');
+
+    if (registerFields) registerFields.classList.toggle('hidden', !isRegister);
+    if (submitBtnText) submitBtnText.innerText = isRegister ? 'Register & Join Event' : 'Enter Event Calendar';
+
+    if (authTabLogin && authTabRegister) {
+        authTabLogin.className = !isRegister 
+            ? "flex-1 py-1.5 text-xs font-bold rounded-lg bg-white text-teal-700 shadow" 
+            : "flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800";
+        authTabRegister.className = isRegister 
+            ? "flex-1 py-1.5 text-xs font-bold rounded-lg bg-white text-teal-700 shadow" 
+            : "flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800";
+    }
+};
+
 window.quickFill = function(code, name) {
+    window.toggleAuthMode(false);
     const codeEl = document.getElementById('login-secret-code');
     const nameEl = document.getElementById('login-user-name');
     if (codeEl) codeEl.value = code;
@@ -161,11 +191,11 @@ window.handleLoginSubmit = async function(e) {
     
     const codeInput = document.getElementById('login-secret-code').value.trim().toUpperCase();
     const nameInput = document.getElementById('login-user-name').value.trim();
-    const rememberMe = document.getElementById('remember-me-checkbox').checked;
+    const rememberMe = document.getElementById('remember-me-checkbox')?.checked;
 
     if (!codeInput || !nameInput) return false;
 
-    // ONLY LOCAL STORAGE USE: Save or remove "Remember Me" credentials
+    // Save login credentials if remember me checked
     if (rememberMe) {
         localStorage.setItem('dateMatch_savedUser', JSON.stringify({ code: codeInput, name: nameInput }));
     } else {
@@ -175,8 +205,40 @@ window.handleLoginSubmit = async function(e) {
     currentSecretCode = codeInput;
     currentUserName = nameInput;
     mySelectedDates.clear();
+    submittedDates.clear();
 
-    // Fetch and subscribe directly from Cloud Firestore
+    const isAuthenticated = await initAuth();
+
+    // Verification check for Login Mode vs Register Mode
+    if (!isRegisterMode && isAuthenticated && db) {
+        try {
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', currentSecretCode);
+            const docSnap = await getDoc(docRef);
+            if (!docSnap.exists() && !DEFAULT_EVENT_TEMPLATE[currentSecretCode]) {
+                window.showToast("Event code not found! Please switch to Register to create it.");
+                return false;
+            }
+        } catch (err) {
+            console.warn("Verification check fallback:", err);
+        }
+    }
+
+    // Handle Registration Mode extra fields
+    if (isRegisterMode) {
+        const eventNameInput = document.getElementById('register-event-name')?.value.trim() || `${currentSecretCode} Event`;
+        const groupSizeInput = parseInt(document.getElementById('register-group-size')?.value, 10) || 5;
+
+        const newEventObj = {
+            name: eventNameInput,
+            code: currentSecretCode,
+            groupSize: groupSizeInput,
+            responses: {}
+        };
+
+        await syncEventToCloud(currentSecretCode, newEventObj);
+        window.showToast(`New event "${eventNameInput}" registered successfully! 🎉`);
+    }
+
     await listenToCloudEvent(currentSecretCode);
 
     document.getElementById('user-avatar-initial').innerText = currentUserName.charAt(0).toUpperCase();
@@ -186,7 +248,7 @@ window.handleLoginSubmit = async function(e) {
     document.getElementById('header-event-badge').innerText = currentSecretCode;
 
     window.navigate('calendar');
-    window.showToast(`Welcome, ${currentUserName}! Connected to Cloud.`);
+    window.showToast(`Welcome, ${currentUserName}! Joined event.`);
     return false;
 };
 
@@ -196,6 +258,7 @@ window.logout = function() {
     currentUserName = null;
     activeEventData = null;
     mySelectedDates.clear();
+    submittedDates.clear();
     document.getElementById('user-info-pill').classList.add('hidden');
     document.getElementById('user-info-pill').classList.remove('flex');
     window.navigate('login');
@@ -231,7 +294,7 @@ function renderCurrentPage() {
     if (activePage === 'admin') renderAdminPage();
 }
 
-// Calendar Navigation & Toggles
+// Calendar Controls
 window.changeCalMonth = function(delta) {
     calCurrentDate = new Date(calCurrentDate.getFullYear(), calCurrentDate.getMonth() + delta, 1);
     renderCalendar();
@@ -251,7 +314,7 @@ window.toggleDateSelection = function(dateStr) {
     renderCalendar();
 };
 
-// Save Free Days to Cloud Firestore
+// Save Response (Submit Free Days)
 window.submitFreeDays = async function() {
     if (!currentSecretCode || !currentUserName || !activeEventData) return;
 
@@ -265,9 +328,10 @@ window.submitFreeDays = async function() {
         responses: updatedResponses
     };
 
+    submittedDates = new Set(mySelectedDates);
     await syncEventToCloud(currentSecretCode, updatedEvent);
 
-    window.showToast("Your free days saved to Cloud! 🎉");
+    window.showToast("Response saved & submitted! 🎉");
     checkAndTriggerConfetti();
 };
 
@@ -290,6 +354,7 @@ function checkAndTriggerConfetti() {
     }
 }
 
+// Calendar Renderer with Draft Checkboxes & Submitted Green Backgrounds
 function renderCalendar() {
     if (!currentSecretCode || !activeEventData) return;
 
@@ -316,6 +381,7 @@ function renderCalendar() {
 
     let allFreeDatesCount = 0;
 
+    // Previous month padding
     for (let i = firstDayIndex - 1; i >= 0; i--) {
         const dayNum = prevMonthDays - i;
         const dCell = document.createElement('div');
@@ -324,6 +390,7 @@ function renderCalendar() {
         daysGrid.appendChild(dCell);
     }
 
+    // Current month days
     for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         
@@ -332,7 +399,8 @@ function renderCalendar() {
             if (mDates.includes(dateStr)) freeMembers.push(mName);
         });
 
-        const isMySelected = mySelectedDates.has(dateStr);
+        const isDraftSelected = mySelectedDates.has(dateStr);
+        const isSubmittedResponse = submittedDates.has(dateStr);
         const isAllFree = freeMembers.length >= eventObj.groupSize && eventObj.groupSize > 0;
         
         if (isAllFree) allFreeDatesCount++;
@@ -341,14 +409,19 @@ function renderCalendar() {
         dCell.onclick = () => window.toggleDateSelection(dateStr);
 
         let cardBgClass = "bg-white hover:bg-teal-50/50 border-slate-200/80";
+
+        // Styling logic: All Free -> Golden Glow; Submitted -> Solid Green; Draft -> Checkbox Outline
         if (isAllFree) {
-            cardBgClass = "all-free-glow text-slate-900";
-        } else if (isMySelected) {
-            cardBgClass = "bg-teal-500 text-white border-teal-600 shadow-md shadow-teal-500/20";
+            cardBgClass = "all-free-glow text-slate-900 font-bold";
+        } else if (isSubmittedResponse && isDraftSelected) {
+            cardBgClass = "bg-emerald-600 text-white font-bold border-emerald-700 shadow-md shadow-emerald-600/20";
+        } else if (isDraftSelected) {
+            cardBgClass = "bg-teal-50 border-2 border-teal-500 text-teal-900 font-semibold shadow-sm";
         }
 
-        dCell.className = `aspect-square rounded-2xl p-1.5 sm:p-2 flex flex-col justify-between border transition-all cursor-pointer relative overflow-hidden ${cardBgClass}`;
+        dCell.className = `aspect-square rounded-2xl p-1.5 sm:p-2 flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden ${cardBgClass}`;
 
+        // Member Avatar Badges
         let avatarBadgesHtml = '';
         if (freeMembers.length > 0) {
             avatarBadgesHtml = `
@@ -357,7 +430,9 @@ function renderCalendar() {
                         <span class="text-[10px] px-1.5 py-0.5 rounded-md font-bold truncate max-w-[55px] ${
                             isAllFree 
                                 ? 'bg-slate-900/90 text-amber-300' 
-                                : (m === currentUserName ? 'bg-emerald-700 text-white' : 'bg-slate-200/80 text-slate-700')
+                                : (m === currentUserName 
+                                    ? (isSubmittedResponse ? 'bg-emerald-900 text-emerald-100' : 'bg-teal-700 text-white') 
+                                    : 'bg-slate-200/80 text-slate-700')
                         }" title="${m}">
                             ${m}
                         </span>
@@ -366,11 +441,22 @@ function renderCalendar() {
             `;
         }
 
+        // Checkbox Indicator for Draft / Submitted Status
+        let statusIndicator = '';
+        if (isAllFree) {
+            statusIndicator = '<span class="text-[10px] font-black tracking-tighter px-1 py-0.5 bg-slate-900 text-amber-300 rounded-md">ALL FREE</span>';
+        } else if (isSubmittedResponse && isDraftSelected) {
+            statusIndicator = '<span class="text-[10px] font-bold px-1.5 py-0.5 bg-emerald-800 text-emerald-100 rounded-md flex items-center gap-0.5"><i data-lucide="check" class="w-3 h-3"></i> Saved</span>';
+        } else if (isDraftSelected) {
+            statusIndicator = '<i data-lucide="check-square" class="w-4 h-4 text-teal-600"></i>';
+        } else {
+            statusIndicator = '<i data-lucide="square" class="w-4 h-4 text-slate-300 hover:text-teal-400"></i>';
+        }
+
         dCell.innerHTML = `
             <div class="flex items-center justify-between w-full">
-                <span class="text-xs sm:text-sm font-bold ${isMySelected && !isAllFree ? 'text-white' : 'text-slate-800'}">${day}</span>
-                ${isAllFree ? '<span class="text-[10px] font-black tracking-tighter px-1 py-0.5 bg-slate-900 text-amber-300 rounded-md">ALL FREE</span>' : ''}
-                ${isMySelected && !isAllFree ? '<i data-lucide="check" class="w-3.5 h-3.5 text-white"></i>' : ''}
+                <span class="text-xs sm:text-sm font-bold ${isSubmittedResponse && isDraftSelected && !isAllFree ? 'text-white' : 'text-slate-800'}">${day}</span>
+                ${statusIndicator}
             </div>
             ${avatarBadgesHtml}
         `;
@@ -379,13 +465,15 @@ function renderCalendar() {
     }
 
     const allFreeBadge = document.getElementById('all-free-count-badge');
-    if (allFreeDatesCount > 0) {
-        allFreeBadge.classList.remove('hidden');
-        allFreeBadge.classList.add('flex');
-        document.getElementById('all-free-count-num').innerText = allFreeDatesCount;
-    } else {
-        allFreeBadge.classList.add('hidden');
-        allFreeBadge.classList.remove('flex');
+    if (allFreeBadge) {
+        if (allFreeDatesCount > 0) {
+            allFreeBadge.classList.remove('hidden');
+            allFreeBadge.classList.add('flex');
+            document.getElementById('all-free-count-num').innerText = allFreeDatesCount;
+        } else {
+            allFreeBadge.classList.add('hidden');
+            allFreeBadge.classList.remove('flex');
+        }
     }
 
     if (window.lucide) window.lucide.createIcons();
@@ -400,7 +488,7 @@ function renderMemberList() {
     container.innerHTML = '';
 
     const members = Object.keys(responses);
-    document.getElementById('member-list-count').innerText = `${members.length} / ${eventObj.groupSize} members responded`;
+    document.getElementById('member-list-count').innerText = `${members.length} / ${eventObj.groupSize} expected members responded`;
 
     if (members.length === 0) {
         container.innerHTML = `<div class="col-span-2 text-center py-8 text-xs text-slate-400">No members have submitted availability yet.</div>`;
@@ -525,6 +613,7 @@ window.clearEventResponses = async function() {
     };
 
     mySelectedDates.clear();
+    submittedDates.clear();
     await syncEventToCloud(currentSecretCode, updatedEvent);
     window.showToast("Member responses reset on Cloud!");
     renderAdminPage();
@@ -572,6 +661,7 @@ window.importEventJSON = function(e) {
 
 window.showToast = function(msg) {
     const toast = document.getElementById('toast');
+    if (!toast) return;
     document.getElementById('toast-msg').innerText = msg;
     toast.classList.remove('translate-y-16', 'opacity-0');
     toast.classList.add('translate-y-0', 'opacity-100');
@@ -582,6 +672,12 @@ window.showToast = function(msg) {
     }, 3000);
 };
 
+// Toggle App Info Modal
+window.toggleAppInfoModal = function(show) {
+    const modal = document.getElementById('app-info-modal');
+    if (modal) modal.classList.toggle('hidden', !show);
+};
+
 // Check for "Remember Me" credentials in LocalStorage on startup
 window.onload = function() {
     if (window.lucide) window.lucide.createIcons();
@@ -589,8 +685,8 @@ window.onload = function() {
     if (savedUser) {
         try {
             const parsed = JSON.parse(savedUser);
-            document.getElementById('login-secret-code').value = parsed.code || '';
-            document.getElementById('login-user-name').value = parsed.name || '';
+            if (document.getElementById('login-secret-code')) document.getElementById('login-secret-code').value = parsed.code || '';
+            if (document.getElementById('login-user-name')) document.getElementById('login-user-name').value = parsed.name || '';
         } catch(e){}
     }
     initAuth();
