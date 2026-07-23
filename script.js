@@ -29,7 +29,7 @@ try {
     console.warn("Firebase initialization warning:", err);
 }
 
-// Automatic Device Mode Detection (No manual toggle button)
+// Automatic Device Mode Detection (Compact vs Wide)
 let isCompactMode = window.innerWidth < 768;
 
 function checkDeviceMode() {
@@ -71,7 +71,7 @@ async function initAuth() {
     return await authPromise;
 }
 
-// Default Fallback Template
+// Default Fallback Template for local preview testing
 const DEFAULT_EVENT_TEMPLATE = {
     "BBQ2026": {
         name: "Weekend BBQ Party",
@@ -110,12 +110,14 @@ async function listenToCloudEvent(code) {
 
     const isAuthenticated = await initAuth();
     if (!isAuthenticated || !db) {
-        activeEventData = DEFAULT_EVENT_TEMPLATE[code] || {
-            name: `${code} Event`,
-            code: code,
-            groupSize: 5,
-            responses: {}
-        };
+        if (!activeEventData) {
+            activeEventData = DEFAULT_EVENT_TEMPLATE[code] || {
+                name: `${code} Event`,
+                code: code,
+                groupSize: 5,
+                responses: {}
+            };
+        }
         updateUserStateFromActiveData();
         renderCurrentPage();
         return;
@@ -127,14 +129,13 @@ async function listenToCloudEvent(code) {
         eventUnsubscribe = onSnapshot(eventDocRef, (docSnap) => {
             if (docSnap.exists()) {
                 activeEventData = docSnap.data();
-            } else {
+            } else if (!activeEventData) {
                 const initialData = DEFAULT_EVENT_TEMPLATE[code] || {
                     name: `${code} Event`,
                     code: code,
                     groupSize: 5,
                     responses: {}
                 };
-                setDoc(eventDocRef, initialData, { merge: true });
                 activeEventData = initialData;
             }
 
@@ -199,7 +200,7 @@ window.quickFill = function(code, name) {
     if (nameEl) nameEl.value = name;
 };
 
-// Handle Login with Auto-Register fallback
+// Handle Login with Strict Single-Time Registration & Remember Name Only
 window.handleLoginSubmit = async function(e) {
     if (e && e.preventDefault) e.preventDefault();
     
@@ -209,10 +210,11 @@ window.handleLoginSubmit = async function(e) {
 
     if (!codeInput || !nameInput) return false;
 
+    // REMEMBER ME: Only save user's Name in LocalStorage
     if (rememberMe) {
-        localStorage.setItem('dateMatch_savedUser', JSON.stringify({ code: codeInput, name: nameInput }));
+        localStorage.setItem('dateMatch_savedUserName', nameInput);
     } else {
-        localStorage.removeItem('dateMatch_savedUser');
+        localStorage.removeItem('dateMatch_savedUserName');
     }
 
     currentSecretCode = codeInput;
@@ -220,23 +222,24 @@ window.handleLoginSubmit = async function(e) {
 
     const isAuthenticated = await initAuth();
 
-    // If not in registration mode yet, check if event code exists
-    if (!isRegisterMode) {
-        let exists = false;
-        if (DEFAULT_EVENT_TEMPLATE[currentSecretCode]) {
-            exists = true;
-        } else if (isAuthenticated && db) {
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', currentSecretCode);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) exists = true;
-            } catch (err) {
-                console.warn("Doc check error:", err);
-            }
+    // Check if event code exists in Firestore or local defaults
+    let exists = false;
+    if (DEFAULT_EVENT_TEMPLATE[currentSecretCode]) {
+        exists = true;
+    } else if (isAuthenticated && db) {
+        try {
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', currentSecretCode);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) exists = true;
+        } catch (err) {
+            console.warn("Doc check error:", err);
         }
+    }
 
-        // Restrict login to existing events only -> Switch to register if code doesn't exist
+    // LOGIN MODE: Event must exist
+    if (!isRegisterMode) {
         if (!exists) {
+            // Event does not exist -> Automatically switch UI to Register Mode
             isRegisterMode = true;
             const regFields = document.getElementById('register-extra-fields');
             const submitText = document.getElementById('login-submit-btn-text');
@@ -246,25 +249,31 @@ window.handleLoginSubmit = async function(e) {
             if (submitText) submitText.innerText = 'Register & Join Event';
             if (desc) desc.innerText = 'Complete event details below to register!';
 
-            window.showToast("Event code not found. Switched to Registration Mode!");
+            window.showToast("Event code not found. Complete registration below!");
             return false;
         }
-    }
+    } else {
+        // REGISTER MODE: Check if event ALREADY exists to prevent re-registration
+        if (exists) {
+            window.showToast("This event code already exists! Logging in directly.");
+            isRegisterMode = false;
+            const regFields = document.getElementById('register-extra-fields');
+            if (regFields) regFields.classList.add('hidden');
+        } else {
+            // Brand-new registration: save directly to Firestore
+            const eventNameInput = document.getElementById('register-event-name')?.value.trim() || `${currentSecretCode} Event`;
+            const groupSizeInput = parseInt(document.getElementById('register-group-size')?.value, 10) || 5;
 
-    // Register mode submission
-    if (isRegisterMode) {
-        const eventNameInput = document.getElementById('register-event-name')?.value.trim() || `${currentSecretCode} Event`;
-        const groupSizeInput = parseInt(document.getElementById('register-group-size')?.value, 10) || 5;
+            const newEventObj = {
+                name: eventNameInput,
+                code: currentSecretCode,
+                groupSize: groupSizeInput,
+                responses: {}
+            };
 
-        const newEventObj = {
-            name: eventNameInput,
-            code: currentSecretCode,
-            groupSize: groupSizeInput,
-            responses: {}
-        };
-
-        await syncEventToCloud(currentSecretCode, newEventObj);
-        window.showToast(`New event "${eventNameInput}" registered! 🎉`);
+            await syncEventToCloud(currentSecretCode, newEventObj);
+            window.showToast(`Event "${eventNameInput}" created on Cloud! 🎉`);
+        }
     }
 
     mySelectedDates.clear();
@@ -735,13 +744,11 @@ window.onload = function() {
     if (window.lucide) window.lucide.createIcons();
     checkDeviceMode();
 
-    const savedUser = localStorage.getItem('dateMatch_savedUser');
-    if (savedUser) {
-        try {
-            const parsed = JSON.parse(savedUser);
-            if (document.getElementById('login-secret-code')) document.getElementById('login-secret-code').value = parsed.code || '';
-            if (document.getElementById('login-user-name')) document.getElementById('login-user-name').value = parsed.name || '';
-        } catch(e){}
+    // Check LocalStorage ONLY for saved user's Name
+    const savedName = localStorage.getItem('dateMatch_savedUserName');
+    if (savedName) {
+        const nameEl = document.getElementById('login-user-name');
+        if (nameEl) nameEl.value = savedName;
     }
     initAuth();
 };
