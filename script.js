@@ -428,6 +428,57 @@ function checkAndTriggerConfetti() {
     }
 }
 
+// Render Shared Best Matches Dashboard Leaderboard
+function renderLeaderboard(containerId) {
+    if (!currentSecretCode || !activeEventData) return;
+
+    const eventObj = activeEventData;
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const dateCounts = {};
+    Object.values(eventObj.responses || {}).forEach(userDates => {
+        userDates.forEach(d => {
+            dateCounts[d] = (dateCounts[d] || 0) + 1;
+        });
+    });
+
+    const sortedDates = Object.entries(dateCounts).sort((a,b) => b[1] - a[1]);
+    container.innerHTML = '';
+
+    if (sortedDates.length === 0) {
+        container.innerHTML = `<div class="text-xs text-slate-400 italic py-4 text-center">No date submissions yet.</div>`;
+        return;
+    }
+
+    sortedDates.forEach(([dateStr, count]) => {
+        const isAllFree = count >= eventObj.groupSize;
+        const percent = Math.min(100, Math.round((count / eventObj.groupSize) * 100));
+
+        const item = document.createElement('div');
+        item.className = `p-2.5 sm:p-3 rounded-2xl border flex items-center justify-between transition-all ${
+            isAllFree ? 'bg-amber-50 border-amber-300 shadow-sm' : 'bg-slate-50 border-slate-200'
+        }`;
+
+        item.innerHTML = `
+            <div>
+                <div class="text-xs font-bold text-slate-800 font-mono flex items-center gap-1.5">
+                    <span>${dateStr}</span>
+                    ${isAllFree ? '<span class="px-1.5 py-0.2 bg-amber-400 text-slate-900 font-sans text-[9px] sm:text-[10px] rounded font-black">100% ALL FREE</span>' : ''}
+                </div>
+                <div class="w-24 sm:w-32 bg-slate-200 h-1.5 rounded-full mt-1.5 overflow-hidden">
+                    <div class="bg-teal-500 h-full rounded-full" style="width: ${percent}%"></div>
+                </div>
+            </div>
+            <div class="text-right">
+                <span class="text-xs sm:text-sm font-black text-slate-800">${count}</span>
+                <span class="text-[11px] text-slate-500">/ ${eventObj.groupSize} free</span>
+            </div>
+        `;
+        container.appendChild(item);
+    });
+}
+
 function renderCalendar() {
     if (!currentSecretCode || !activeEventData) return;
 
@@ -565,6 +616,9 @@ function renderCalendar() {
         }
     }
 
+    // Render Home Leaderboard Dashboard
+    renderLeaderboard('leaderboard-container-home');
+
     if (window.lucide) window.lucide.createIcons();
 }
 
@@ -623,48 +677,8 @@ function renderAdminPage() {
     document.getElementById('setting-event-code').value = eventObj.code;
     document.getElementById('setting-group-size').value = eventObj.groupSize || 5;
 
-    const dateCounts = {};
-    Object.values(eventObj.responses || {}).forEach(userDates => {
-        userDates.forEach(d => {
-            dateCounts[d] = (dateCounts[d] || 0) + 1;
-        });
-    });
-
-    const sortedDates = Object.entries(dateCounts).sort((a,b) => b[1] - a[1]);
-    const leaderboard = document.getElementById('leaderboard-container');
-    leaderboard.innerHTML = '';
-
-    if (sortedDates.length === 0) {
-        leaderboard.innerHTML = `<div class="text-xs text-slate-400 italic py-4 text-center">No date submissions yet.</div>`;
-        return;
-    }
-
-    sortedDates.forEach(([dateStr, count]) => {
-        const isAllFree = count >= eventObj.groupSize;
-        const percent = Math.min(100, Math.round((count / eventObj.groupSize) * 100));
-
-        const item = document.createElement('div');
-        item.className = `p-3 rounded-2xl border flex items-center justify-between ${
-            isAllFree ? 'bg-amber-50 border-amber-300' : 'bg-slate-50 border-slate-200'
-        }`;
-
-        item.innerHTML = `
-            <div>
-                <div class="text-xs font-bold text-slate-800 font-mono flex items-center gap-1.5">
-                    <span>${dateStr}</span>
-                    ${isAllFree ? '<span class="px-1.5 py-0.2 bg-amber-400 text-slate-900 font-sans text-[10px] rounded font-black">100% ALL FREE</span>' : ''}
-                </div>
-                <div class="w-28 sm:w-32 bg-slate-200 h-1.5 rounded-full mt-1.5 overflow-hidden">
-                    <div class="bg-teal-500 h-full rounded-full" style="width: ${percent}%"></div>
-                </div>
-            </div>
-            <div class="text-right">
-                <span class="text-sm font-black text-slate-800">${count}</span>
-                <span class="text-xs text-slate-500">/ ${eventObj.groupSize} free</span>
-            </div>
-        `;
-        leaderboard.appendChild(item);
-    });
+    // Render Admin Leaderboard Dashboard
+    renderLeaderboard('leaderboard-container-admin');
 }
 
 window.handleSaveSettings = async function(e) {
