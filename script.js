@@ -94,7 +94,7 @@ const DEFAULT_EVENT_TEMPLATE = {
     }
 };
 
-// In-Memory App State
+// In-Memory App & Registry State
 let activeEventData = null;
 let currentSecretCode = null;
 let currentUserName = null;
@@ -104,6 +104,31 @@ let calCurrentDate = new Date(2026, 7, 1);
 let eventUnsubscribe = null;
 let isRegisterMode = false;
 
+// Local Session Registry for newly created event codes
+const createdEventsRegistry = {};
+
+// Helper: Check if an event code exists across Default Template, Local Registry, and Firestore Cloud
+async function checkEventExists(code) {
+    if (DEFAULT_EVENT_TEMPLATE[code] || createdEventsRegistry[code]) {
+        return true;
+    }
+
+    const isAuthenticated = await initAuth();
+    if (isAuthenticated && db) {
+        try {
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', code);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                createdEventsRegistry[code] = docSnap.data();
+                return true;
+            }
+        } catch (err) {
+            console.warn("Firestore event check notice:", err);
+        }
+    }
+    return false;
+}
+
 // Real-time Firestore Listener
 async function listenToCloudEvent(code) {
     if (eventUnsubscribe) eventUnsubscribe();
@@ -111,7 +136,7 @@ async function listenToCloudEvent(code) {
     const isAuthenticated = await initAuth();
     if (!isAuthenticated || !db) {
         if (!activeEventData) {
-            activeEventData = DEFAULT_EVENT_TEMPLATE[code] || {
+            activeEventData = createdEventsRegistry[code] || DEFAULT_EVENT_TEMPLATE[code] || {
                 name: `${code} Event`,
                 code: code,
                 groupSize: 5,
@@ -129,8 +154,9 @@ async function listenToCloudEvent(code) {
         eventUnsubscribe = onSnapshot(eventDocRef, (docSnap) => {
             if (docSnap.exists()) {
                 activeEventData = docSnap.data();
+                createdEventsRegistry[code] = activeEventData;
             } else if (!activeEventData) {
-                const initialData = DEFAULT_EVENT_TEMPLATE[code] || {
+                const initialData = createdEventsRegistry[code] || DEFAULT_EVENT_TEMPLATE[code] || {
                     name: `${code} Event`,
                     code: code,
                     groupSize: 5,
@@ -162,6 +188,7 @@ function updateUserStateFromActiveData() {
 // Sync Event Data to Firestore Cloud
 async function syncEventToCloud(code, updatedEventData) {
     activeEventData = updatedEventData;
+    createdEventsRegistry[code] = updatedEventData;
     renderCurrentPage();
 
     const isAuthenticated = await initAuth();
@@ -174,6 +201,31 @@ async function syncEventToCloud(code, updatedEventData) {
         console.error("Firestore cloud sync failed:", e);
     }
 }
+
+// Switch between Join and Create Event Mode
+window.setAuthMode = function(mode) {
+    isRegisterMode = (mode === 'create');
+    
+    const regFields = document.getElementById('register-extra-fields');
+    const submitText = document.getElementById('login-submit-btn-text');
+    const desc = document.getElementById('login-subtitle-desc');
+    const tabJoin = document.getElementById('auth-tab-join');
+    const tabCreate = document.getElementById('auth-tab-create');
+
+    if (isRegisterMode) {
+        if (regFields) regFields.classList.remove('hidden');
+        if (submitText) submitText.innerText = 'Register & Join Event';
+        if (desc) desc.innerText = 'Fill in the event details to create a new calendar!';
+        if (tabJoin) tabJoin.className = "flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800 transition-all";
+        if (tabCreate) tabCreate.className = "flex-1 py-1.5 text-xs font-bold rounded-lg bg-white text-teal-700 shadow transition-all";
+    } else {
+        if (regFields) regFields.classList.add('hidden');
+        if (submitText) submitText.innerText = 'Enter Event Calendar';
+        if (desc) desc.innerText = 'Join an existing event or create a new one';
+        if (tabJoin) tabJoin.className = "flex-1 py-1.5 text-xs font-bold rounded-lg bg-white text-teal-700 shadow transition-all";
+        if (tabCreate) tabCreate.className = "flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800 transition-all";
+    }
+};
 
 // Show / Hide Sample Codes Toggle
 window.toggleSampleCodes = function() {
@@ -194,13 +246,14 @@ window.toggleSampleCodes = function() {
 };
 
 window.quickFill = function(code, name) {
+    window.setAuthMode('join');
     const codeEl = document.getElementById('login-secret-code');
     const nameEl = document.getElementById('login-user-name');
     if (codeEl) codeEl.value = code;
     if (nameEl) nameEl.value = name;
 };
 
-// Handle Login with Strict Single-Time Registration & Remember Name Only
+// Handle Login / Registration Form Submission
 window.handleLoginSubmit = async function(e) {
     if (e && e.preventDefault) e.preventDefault();
     
@@ -210,7 +263,7 @@ window.handleLoginSubmit = async function(e) {
 
     if (!codeInput || !nameInput) return false;
 
-    // REMEMBER ME: Only save user's Name in LocalStorage
+    // REMEMBER ME: Only save user's Name if explicitly checked
     if (rememberMe) {
         localStorage.setItem('dateMatch_savedUserName', nameInput);
     } else {
@@ -220,47 +273,21 @@ window.handleLoginSubmit = async function(e) {
     currentSecretCode = codeInput;
     currentUserName = nameInput;
 
-    const isAuthenticated = await initAuth();
+    const exists = await checkEventExists(currentSecretCode);
 
-    // Check if event code exists in Firestore or local defaults
-    let exists = false;
-    if (DEFAULT_EVENT_TEMPLATE[currentSecretCode]) {
-        exists = true;
-    } else if (isAuthenticated && db) {
-        try {
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', currentSecretCode);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) exists = true;
-        } catch (err) {
-            console.warn("Doc check error:", err);
-        }
-    }
-
-    // LOGIN MODE: Event must exist
+    // JOIN MODE: Event must exist
     if (!isRegisterMode) {
         if (!exists) {
-            // Event does not exist -> Automatically switch UI to Register Mode
-            isRegisterMode = true;
-            const regFields = document.getElementById('register-extra-fields');
-            const submitText = document.getElementById('login-submit-btn-text');
-            const desc = document.getElementById('login-subtitle-desc');
-
-            if (regFields) regFields.classList.remove('hidden');
-            if (submitText) submitText.innerText = 'Register & Join Event';
-            if (desc) desc.innerText = 'Complete event details below to register!';
-
-            window.showToast("Event code not found. Complete registration below!");
+            window.showToast(`Event code "${currentSecretCode}" not found. Please check the code or switch to Create Event.`);
             return false;
         }
     } else {
-        // REGISTER MODE: Check if event ALREADY exists to prevent re-registration
+        // CREATE MODE: Prevent duplicate registration
         if (exists) {
-            window.showToast("This event code already exists! Logging in directly.");
-            isRegisterMode = false;
-            const regFields = document.getElementById('register-extra-fields');
-            if (regFields) regFields.classList.add('hidden');
+            window.showToast(`Event "${currentSecretCode}" already exists! Logging in directly.`);
+            window.setAuthMode('join');
         } else {
-            // Brand-new registration: save directly to Firestore
+            // Brand new event registration -> Save directly to Firestore Cloud
             const eventNameInput = document.getElementById('register-event-name')?.value.trim() || `${currentSecretCode} Event`;
             const groupSizeInput = parseInt(document.getElementById('register-group-size')?.value, 10) || 5;
 
@@ -272,7 +299,7 @@ window.handleLoginSubmit = async function(e) {
             };
 
             await syncEventToCloud(currentSecretCode, newEventObj);
-            window.showToast(`Event "${eventNameInput}" created on Cloud! 🎉`);
+            window.showToast(`Event "${eventNameInput}" created successfully! 🎉`);
         }
     }
 
@@ -296,16 +323,14 @@ window.logout = function() {
     currentSecretCode = null;
     currentUserName = null;
     activeEventData = null;
-    isRegisterMode = false;
     mySelectedDates.clear();
     submittedDates.clear();
 
-    const regFields = document.getElementById('register-extra-fields');
-    const submitText = document.getElementById('login-submit-btn-text');
-    const desc = document.getElementById('login-subtitle-desc');
-    if (regFields) regFields.classList.add('hidden');
-    if (submitText) submitText.innerText = 'Enter Event Calendar';
-    if (desc) desc.innerText = 'Enter your event secret code to log in';
+    window.setAuthMode('join');
+
+    // Uncheck remember me box on logout by default
+    const remBox = document.getElementById('remember-me-checkbox');
+    if (remBox) remBox.checked = false;
 
     document.getElementById('user-info-pill').classList.add('hidden');
     document.getElementById('user-info-pill').classList.remove('flex');
@@ -744,11 +769,18 @@ window.onload = function() {
     if (window.lucide) window.lucide.createIcons();
     checkDeviceMode();
 
-    // Check LocalStorage ONLY for saved user's Name
+    // Ensure Remember Me checkbox defaults to unchecked
+    const remBox = document.getElementById('remember-me-checkbox');
+    if (remBox) remBox.checked = false;
+
+    // Check LocalStorage ONLY for saved user's Name if user previously opted in
     const savedName = localStorage.getItem('dateMatch_savedUserName');
     if (savedName) {
         const nameEl = document.getElementById('login-user-name');
-        if (nameEl) nameEl.value = savedName;
+        if (nameEl) {
+            nameEl.value = savedName;
+            if (remBox) remBox.checked = true;
+        }
     }
     initAuth();
 };
