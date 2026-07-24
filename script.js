@@ -265,9 +265,9 @@ window.handleLoginSubmit = async function(e) {
     if (cloudError) {
         setLoading(false);
         if (cloudError.message === "MISSING_CONFIG" || !db) {
-            window.showToast("未偵測到 Firebase 金鑰！請在 script.js 第 13 行填入 Firebase API Key。");
+            window.showToast("No Firebase Config Detected! Please contact @arthur_le.e for help.");
         } else {
-            window.showToast("無法連接雲端，請檢查網路連線或 Firebase 權限設定。");
+            window.showToast("Failed to connect to Cloud Storage, Please check your internet connection or Firebase permission.");
         }
         return false;
     }
@@ -277,13 +277,13 @@ window.handleLoginSubmit = async function(e) {
     if (!isRegisterMode) {
         if (!eventExistsOnCloud) {
             setLoading(false);
-            window.showToast(`找不到活動代碼 "${currentSecretCode}"！請檢查代碼或切換至 "Create Event"。`);
+            window.showToast(`Cannot find Event Code "${currentSecretCode}" in record! Please check your code or Create an Event`);
             return false;
         }
     } else {
         if (eventExistsOnCloud) {
             setLoading(false);
-            window.showToast(`代碼 "${currentSecretCode}" 已存在於雲端！請切換至 "Join Event" 直接進入。`);
+            window.showToast(`Event Code "${currentSecretCode}" has existed in Cloud Storage, Please "Join Event" instead.`);
             window.setAuthMode('join');
             return false;
         } else {
@@ -313,7 +313,7 @@ window.handleLoginSubmit = async function(e) {
     document.getElementById('header-event-badge').innerText = currentSecretCode;
 
     window.navigate('calendar');
-    window.showToast(`歡迎，${currentUserName}！成功進入活動。`);
+    window.showToast(`Welcome, ${currentUserName}! You've entered the Event successfully.`);
     return false;
 };
 
@@ -336,7 +336,7 @@ window.logout = function() {
 let activePage = 'login';
 window.navigate = function(page) {
     if (page !== 'login' && (!currentSecretCode || !currentUserName)) {
-        window.showToast("請先輸入活動代碼與您的名字！");
+        window.showToast("Please enter the Event Code and your name.");
         page = 'login';
     }
     activePage = page;
@@ -420,7 +420,7 @@ window.submitFreeDays = async function() {
     submittedDates = new Set(mySelectedDates);
     await syncEventToCloud(currentSecretCode, updatedEvent);
 
-    window.showToast("已儲存並提交您的空閒日期！🎉");
+    window.showToast("Your Free Days has been stored and submitted! 🎉");
     checkAndTriggerConfetti();
 };
 
@@ -665,7 +665,7 @@ function renderMemberList() {
     document.getElementById('member-list-count').innerText = `${members.length} / ${eventObj.groupSize} expected responded`;
 
     if (members.length === 0) {
-        container.innerHTML = `<div class="col-span-2 text-center py-8 text-xs text-slate-400">尚無成員提交空閒時間。</div>`;
+        container.innerHTML = `<div class="col-span-2 text-center py-8 text-xs text-slate-400">No Member has submitted their Free Days since now. :( </div>`;
         return;
     }
 
@@ -681,18 +681,18 @@ function renderMemberList() {
                         ${mName.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                        <div class="text-sm font-bold text-slate-800">${mName} ${mName === currentUserName ? '(你)' : ''}</div>
-                        <div class="text-[11px] text-slate-500">已選擇 ${dates.length} 天有空</div>
+                        <div class="text-sm font-bold text-slate-800">${mName} ${mName === currentUserName ? '(You, My Master)' : ''}</div>
+                        <div class="text-[11px] text-slate-500">${dates.length} Free Days were selected</div>
                     </div>
                 </div>
                 <span class="text-xs font-mono font-bold px-2 py-1 bg-teal-100 text-teal-800 rounded-lg">
-                    ${dates.length} 天有空
+                    ${dates.length} Days free
                 </span>
             </div>
             <div class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-200/60">
                 ${dates.length > 0 
                     ? dates.map(d => `<span class="text-[11px] px-2 py-0.5 bg-white border border-slate-200 text-slate-700 font-mono font-semibold rounded-md">${d}</span>`).join('')
-                    : '<span class="text-xs text-slate-400 italic">未標記任何日期。</span>'
+                    : '<span class="text-xs text-slate-400 italic">No Free Days marked.</span>'
                 }
             </div>
         `;
@@ -729,13 +729,13 @@ window.handleSaveSettings = async function(e) {
     currentSecretCode = newCode;
     document.getElementById('header-event-badge').innerText = currentSecretCode;
     await syncEventToCloud(currentSecretCode, updatedEvent);
-    window.showToast("活動設定已同步儲存至雲端！");
+    window.showToast("Event Settings has saved to the Cloud!");
     renderAdminPage();
     return false;
 };
 
 window.clearEventResponses = async function() {
-    if (!confirm("確定要清空此活動的所有成員空閒時間回應嗎？")) return;
+    if (!confirm("Are you sure you would like to clear all member's Free Days Responses?")) return;
     if (!currentSecretCode || !activeEventData) return;
 
     const updatedEvent = {
@@ -746,7 +746,7 @@ window.clearEventResponses = async function() {
     mySelectedDates.clear();
     submittedDates.clear();
     await syncEventToCloud(currentSecretCode, updatedEvent);
-    window.showToast("已成功重置雲端回應！");
+    window.showToast("Reset all responses Successfully.");
     renderAdminPage();
 };
 
@@ -760,7 +760,7 @@ window.exportEventJSON = function() {
     document.body.appendChild(dlAnchor);
     dlAnchor.click();
     dlAnchor.remove();
-    window.showToast("資料已匯出為 JSON 檔案！");
+    window.showToast("Data has been exported as JSON file.");
 };
 
 window.triggerImportJSON = function() {
@@ -781,10 +781,10 @@ window.importEventJSON = function(e) {
                 const firstKey = Object.keys(imported)[0];
                 if (firstKey) await syncEventToCloud(firstKey, imported[firstKey]);
             }
-            window.showToast("已成功匯入資料並同步至雲端！");
+            window.showToast("Data has imported and stored on Cloud successfully.");
             window.navigate('calendar');
         } catch(err) {
-            window.showToast("讀取 JSON 檔案格式失敗。");
+            window.showToast("Failed to read that JSON file.");
         }
     };
     reader.readAsText(file);
