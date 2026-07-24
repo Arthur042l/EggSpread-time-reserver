@@ -61,35 +61,12 @@ async function initAuth() {
         }
         return true;
     } catch (e) {
-        console.warn("Cloud Auth Notice: Operating in local fallback mode.", e);
+        console.warn("Cloud Auth Notice: Could not authenticate with Firebase.", e);
         return false;
     }
 }
 
-// Default Fallback Template for local preview testing
-const DEFAULT_EVENT_TEMPLATE = {
-    "BBQ2026": {
-        name: "Weekend BBQ Party",
-        code: "BBQ2026",
-        groupSize: 4,
-        responses: {
-            "Alex": ["2026-08-08", "2026-08-09", "2026-08-15", "2026-08-16", "2026-08-22"],
-            "Chris": ["2026-08-08", "2026-08-15", "2026-08-16", "2026-08-23"],
-            "Sam": ["2026-08-08", "2026-08-09", "2026-08-15", "2026-08-16", "2026-08-29"],
-            "Taylor": ["2026-08-08", "2026-08-15", "2026-08-16"]
-        }
-    },
-    "CAMP2026": {
-        name: "Summer Camp 2026",
-        code: "CAMP2026",
-        groupSize: 3,
-        responses: {
-            "Sam": ["2026-08-10", "2026-08-11", "2026-08-12"]
-        }
-    }
-};
-
-// In-Memory App & Registry State
+// Active App State (NO LOCAL MEMORY OF EVENTS - Pure Cloud Firestore)
 let activeEventData = null;
 let currentSecretCode = null;
 let currentUserName = null;
@@ -99,35 +76,7 @@ let calCurrentDate = new Date(2026, 7, 1);
 let eventUnsubscribe = null;
 let isRegisterMode = false;
 
-// Local Session Registry for created and checked event codes
-const createdEventsRegistry = {};
-
-// Helper: Check if an event code exists across Default Template, Local Registry, and Firestore Cloud
-async function checkEventExists(code) {
-    const cleanCode = code ? code.trim().toUpperCase() : '';
-    if (!cleanCode) return false;
-
-    if (DEFAULT_EVENT_TEMPLATE[cleanCode] || createdEventsRegistry[cleanCode]) {
-        return true;
-    }
-
-    const isAuthenticated = await initAuth();
-    if (isAuthenticated && db) {
-        try {
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', cleanCode);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                createdEventsRegistry[cleanCode] = docSnap.data();
-                return true;
-            }
-        } catch (err) {
-            console.warn("Firestore event check notice:", err);
-        }
-    }
-    return false;
-}
-
-// Real-time Firestore Listener
+// Real-time Firestore Event Fetcher
 async function listenToCloudEvent(code) {
     if (eventUnsubscribe) eventUnsubscribe();
 
@@ -135,16 +84,7 @@ async function listenToCloudEvent(code) {
     const isAuthenticated = await initAuth();
 
     if (!isAuthenticated || !db) {
-        if (!activeEventData) {
-            activeEventData = createdEventsRegistry[cleanCode] || DEFAULT_EVENT_TEMPLATE[cleanCode] || {
-                name: `${cleanCode} Event`,
-                code: cleanCode,
-                groupSize: 5,
-                responses: {}
-            };
-        }
-        updateUserStateFromActiveData();
-        renderCurrentPage();
+        window.showToast("Cloud connection unavailable.");
         return;
     }
 
@@ -154,15 +94,8 @@ async function listenToCloudEvent(code) {
         eventUnsubscribe = onSnapshot(eventDocRef, (docSnap) => {
             if (docSnap.exists()) {
                 activeEventData = docSnap.data();
-                createdEventsRegistry[cleanCode] = activeEventData;
-            } else if (!activeEventData) {
-                const initialData = createdEventsRegistry[cleanCode] || DEFAULT_EVENT_TEMPLATE[cleanCode] || {
-                    name: `${cleanCode} Event`,
-                    code: cleanCode,
-                    groupSize: 5,
-                    responses: {}
-                };
-                activeEventData = initialData;
+            } else {
+                activeEventData = null;
             }
 
             updateUserStateFromActiveData();
@@ -185,11 +118,10 @@ function updateUserStateFromActiveData() {
     }
 }
 
-// Sync Event Data to Firestore Cloud
+// Sync Event Data directly to Firestore Cloud
 async function syncEventToCloud(code, updatedEventData) {
     const cleanCode = code ? code.trim().toUpperCase() : '';
     activeEventData = updatedEventData;
-    createdEventsRegistry[cleanCode] = updatedEventData;
     renderCurrentPage();
 
     const isAuthenticated = await initAuth();
@@ -216,7 +148,7 @@ window.setAuthMode = function(mode) {
     if (isRegisterMode) {
         if (regFields) regFields.classList.remove('hidden');
         if (submitText) submitText.innerText = 'Register & Join Event';
-        if (desc) desc.innerText = 'Fill in the event details to create a new calendar!';
+        if (desc) desc.innerText = 'Fill in event details to create a new calendar!';
         if (tabJoin) tabJoin.className = "flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800 transition-all";
         if (tabCreate) tabCreate.className = "flex-1 py-1.5 text-xs font-bold rounded-lg bg-white text-teal-700 shadow transition-all";
     } else {
@@ -228,33 +160,18 @@ window.setAuthMode = function(mode) {
     }
 };
 
-// Show / Hide Sample Codes Toggle
-window.toggleSampleCodes = function() {
-    const box = document.getElementById('sample-codes-box');
-    const text = document.getElementById('sample-code-toggle-text');
-    const icon = document.getElementById('sample-code-icon');
+// UI Spinner Helper for Login/Signup Button
+function setLoading(loading) {
+    const btn = document.getElementById('login-submit-btn');
+    const spinner = document.getElementById('login-spinner');
+    const icon = document.getElementById('login-btn-icon');
 
-    if (box) {
-        const isHidden = box.classList.contains('hidden');
-        box.classList.toggle('hidden', !isHidden);
-        box.classList.toggle('flex', isHidden);
-        if (text) text.innerText = isHidden ? 'Hide Sample Codes' : 'Show Sample Codes';
-        if (icon && window.lucide) {
-            icon.setAttribute('data-lucide', isHidden ? 'eye-off' : 'eye');
-            window.lucide.createIcons();
-        }
-    }
-};
+    if (btn) btn.disabled = loading;
+    if (spinner) spinner.classList.toggle('hidden', !loading);
+    if (icon) icon.classList.toggle('hidden', loading);
+}
 
-window.quickFill = function(code, name) {
-    window.setAuthMode('join');
-    const codeEl = document.getElementById('login-secret-code');
-    const nameEl = document.getElementById('login-user-name');
-    if (codeEl) codeEl.value = code;
-    if (nameEl) nameEl.value = name;
-};
-
-// Handle Login / Registration Form Submission
+// Handle Login / Registration Form Submission with Loading Circle & Direct Cloud Query
 window.handleLoginSubmit = async function(e) {
     if (e && e.preventDefault) e.preventDefault();
     
@@ -263,6 +180,9 @@ window.handleLoginSubmit = async function(e) {
     const rememberMe = document.getElementById('remember-me-checkbox')?.checked;
 
     if (!codeInput || !nameInput) return false;
+
+    // Show loading spinner
+    setLoading(true);
 
     // REMEMBER ME: Only save user's Name if explicitly checked
     if (rememberMe) {
@@ -274,21 +194,37 @@ window.handleLoginSubmit = async function(e) {
     currentSecretCode = codeInput;
     currentUserName = nameInput;
 
-    const exists = await checkEventExists(currentSecretCode);
+    const isAuthenticated = await initAuth();
 
-    // JOIN MODE: Event must exist
+    // Query Firestore Cloud directly for existing event document
+    let eventSnap = null;
+    if (isAuthenticated && db) {
+        try {
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', currentSecretCode);
+            eventSnap = await getDoc(docRef);
+        } catch (err) {
+            console.warn("Direct Cloud check notice:", err);
+        }
+    }
+
+    const eventExistsOnCloud = eventSnap && eventSnap.exists();
+
+    // 1. JOIN MODE: Event MUST exist in Cloud
     if (!isRegisterMode) {
-        if (!exists) {
-            window.showToast(`Event code "${currentSecretCode}" not found. Please check the code or switch to Create Event.`);
+        if (!eventExistsOnCloud) {
+            setLoading(false);
+            window.showToast(`Event "${currentSecretCode}" not found! Please check your code or switch to Create Event.`);
             return false;
         }
     } else {
-        // CREATE MODE: Prevent duplicate registration
-        if (exists) {
-            window.showToast(`Event "${currentSecretCode}" already exists! Logging in directly.`);
+        // 2. CREATE MODE: Event MUST NOT exist in Cloud (prevent duplicates)
+        if (eventExistsOnCloud) {
+            setLoading(false);
+            window.showToast(`This code already exists in Cloud! Redirecting to Join mode...`);
             window.setAuthMode('join');
+            return false;
         } else {
-            // Brand new event registration -> Save directly to Firestore Cloud
+            // Register brand-new event to Cloud Firestore
             const eventNameInput = document.getElementById('register-event-name')?.value.trim() || `${currentSecretCode} Event`;
             const groupSizeInput = parseInt(document.getElementById('register-group-size')?.value, 10) || 5;
 
@@ -300,13 +236,14 @@ window.handleLoginSubmit = async function(e) {
             };
 
             await syncEventToCloud(currentSecretCode, newEventObj);
-            window.showToast(`Event "${eventNameInput}" created successfully! 🎉`);
         }
     }
 
     mySelectedDates.clear();
     submittedDates.clear();
     await listenToCloudEvent(currentSecretCode);
+
+    setLoading(false);
 
     document.getElementById('user-avatar-initial').innerText = currentUserName.charAt(0).toUpperCase();
     document.getElementById('user-name-display').innerText = currentUserName;
@@ -315,7 +252,7 @@ window.handleLoginSubmit = async function(e) {
     document.getElementById('header-event-badge').innerText = currentSecretCode;
 
     window.navigate('calendar');
-    window.showToast(`Welcome, ${currentUserName}!`);
+    window.showToast(`Welcome, ${currentUserName}! Joined event.`);
     return false;
 };
 
@@ -329,7 +266,6 @@ window.logout = function() {
 
     window.setAuthMode('join');
 
-    // Uncheck remember me box on logout by default
     const remBox = document.getElementById('remember-me-checkbox');
     if (remBox) remBox.checked = false;
 
