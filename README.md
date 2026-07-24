@@ -6,26 +6,38 @@ Link:
 https://arthur042l.github.io/EggSpread-time-reserver/
 
 ## Task:
-- Login Page( secret code pairing for each event )
-- - only login foe existing, need register.
-- save respond button
+- show who free data on each day boxes (with better indicator)
+- modify: more unify indicator of date boxes
 - 
-- show who free data on each day boxes
-- sepcial presentation for all people free
-- Modify: often show checkboxes on selected days for draft, green background for submitted respond
-- 
-- list view showing list of all member filled the form (showing their free time)
 - Settings page of the event:
   - No. of member of expected respond
   - Code settings
   - Event name
-  - admin dashboard
+  - ? admin dashboard
 - app info
-- compact mode for phone
-- wide mode for computer tablet
+  - author
+  - version
+  - images
+  - setting of the whole website:
+    - login with Google to open admin platform for background settings...
+- en/chin/genZ/Canton ver language
+- All free depend on joined in and expect no. of member
+- code with 4digit #0000
+  - use that code in link box
+  - easy sharing (link / QRcode)
+  - login page just need name, no need code when link have code
+- Every event have unique sub-pages from the login html (eg. eggspread-time-reserver/#0000) but with same layout
+
 
 
 ### Done Task
+- V Login Page( secret code pairing for each event )
+  - V only login foe existing, need register.
 - V remember me ! ( name fill in )
 - V date picker for free days
+- V save respond button
 - V Data management.
+- V sepcial presentation for all people free
+- V compact mode for phone
+- V wide mode for computer tablet
+- V list view showing list of all member filled the form (showing their free time)
