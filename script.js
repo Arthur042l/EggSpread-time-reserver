@@ -501,10 +501,10 @@ function updateSaveButtonState() {
     const unsaved = hasUnsavedChanges();
 
     if (unsaved) {
-        saveBtn.className = "save-response-btn animate-pulse px-3.5 py-2 bg-gradient-to-r from-amber-500 via-emerald-600 to-teal-600 hover:from-amber-400 hover:to-teal-500 text-white text-xs font-bold rounded-xl shadow-lg ring-4 ring-amber-400/40 flex items-center gap-1.5 transition-all transform hover:scale-105";
-        saveBtnText.innerHTML = `Save Unsaved Free Days! <span class="ml-1 px-1.5 py-0.2 bg-amber-300 text-slate-900 text-[10px] rounded-full font-black animate-bounce inline-block">!</span>`;
+        saveBtn.className = "save-response-btn unsaved-glow px-3.5 py-2 bg-gradient-to-r from-amber-500 to-emerald-600 hover:from-amber-400 hover:to-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg flex items-center gap-1.5 transition-all flex-shrink-0";
+        saveBtnText.innerHTML = `Save Response <span class="ml-1 px-1.5 py-0.2 bg-amber-300 text-slate-900 text-[10px] rounded-full font-black animate-bounce inline-block">!</span>`;
     } else {
-        saveBtn.className = "save-response-btn px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-1.5 transition-all";
+        saveBtn.className = "save-response-btn px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-1.5 transition-all flex-shrink-0";
         saveBtnText.innerText = "Save Response";
     }
 }
@@ -608,17 +608,12 @@ function renderCalendar() {
             }
         }
 
-        // Indicator Icon Logic: ALL FREE includes checkbox icon on the left
+        // Indicator Icon Logic: ALL FREE shows only checkbox icon on gold background (No text badge)
         let statusIndicator = '';
         if (isAllFree) {
-            const tickIcon = isDraftSelected
-                ? '<i data-lucide="check-square" class="w-3.5 h-3.5 text-slate-900"></i>'
-                : '<i data-lucide="square" class="w-3.5 h-3.5 text-slate-600 hover:text-slate-900"></i>';
-            const badgeText = isCompactMode 
-                ? '<span class="text-[8px] font-black bg-slate-900 text-amber-300 px-1 py-0.2 rounded">100%</span>' 
-                : '<span class="text-[10px] font-black tracking-tighter px-1 py-0.5 bg-slate-900 text-amber-300 rounded-md">ALL FREE</span>';
-            
-            statusIndicator = `<div class="flex items-center gap-1">${tickIcon}${badgeText}</div>`;
+            statusIndicator = isDraftSelected
+                ? '<i data-lucide="check-square" class="w-4 h-4 text-slate-900 font-bold"></i>'
+                : '<i data-lucide="square" class="w-4 h-4 text-slate-700 hover:text-slate-900"></i>';
         } else if (isSubmittedResponse && isDraftSelected) {
             statusIndicator = isCompactMode 
                 ? '<i data-lucide="check" class="w-3 h-3 text-white"></i>'
@@ -712,8 +707,6 @@ function renderAdminPage() {
     document.getElementById('setting-event-name').value = eventObj.name;
     document.getElementById('setting-event-code').value = eventObj.code;
     document.getElementById('setting-group-size').value = eventObj.groupSize || 5;
-
-    renderLeaderboard('leaderboard-container-admin');
 }
 
 window.handleSaveSettings = async function(e) {
