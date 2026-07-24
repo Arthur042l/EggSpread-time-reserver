@@ -1,20 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Background Styling */
 .bg-custom-gradient {
-    background: linear-gradient(135deg, #00b5b1 0%, #51cba1 40%, #93ce73 80%, #ecc816 100%);
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #0d9488 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
 }
-.bg-card-gradient {
-    background: linear-gradient(135deg, #22d3ee 0%, #14b8a6 25%, #6ee7b7 50%, #4ade80 75%, #fde047 100%);
-}
+
+/* Special Glow Effect for 100% Match */
 .all-free-glow {
-    animation: pulseGlow 2s infinite alternate;
-    background: linear-gradient(135deg, #fef08a 0%, #fde047 50%, #f59e0b 100%) !important;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
     border: 2px solid #f59e0b !important;
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+    animation: pulse-glow 2s infinite alternate;
 }
-@keyframes pulseGlow {
-    0% { box-shadow: 0 0 10px rgba(245, 158, 11, 0.4), 0 0 20px rgba(253, 224, 71, 0.3); }
-    100% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.8), 0 0 35px rgba(253, 224, 71, 0.6); }
+
+@keyframes pulse-glow {
+    0% {
+        box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+    }
+    100% {
+        box-shadow: 0 0 18px rgba(245, 158, 11, 0.6);
+    }
 }
-/* Custom scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
-::-webkit-scrollbar-thumb { background: rgba(20,184,166,0.4); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(20,184,166,0.8); }
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(13, 148, 136, 0.3);
+    border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(13, 148, 136, 0.6);
+}
+
+/* Utility Animations */
+.transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+}
