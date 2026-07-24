@@ -80,15 +80,11 @@ function ensureAuthenticated() {
     return authPromise;
 }
 
-// Resolve Doc Ref Path
+// Resolve Doc Ref Path (Always use standard artifact path with default-app-id fallback)
 function getEventDocRef(code) {
     if (!db) return null;
     const cleanCode = code.trim().toUpperCase();
-    
-    if (typeof __app_id !== 'undefined' && __app_id) {
-        return doc(db, 'artifacts', appId, 'public', 'data', 'events', cleanCode);
-    }
-    return doc(db, 'events', cleanCode);
+    return doc(db, 'artifacts', appId, 'public', 'data', 'events', cleanCode);
 }
 
 // Active App State
@@ -106,7 +102,7 @@ async function listenToCloudEvent(code) {
     if (eventUnsubscribe) eventUnsubscribe();
 
     const isAuth = await ensureAuthenticated();
-    const docRef = getEventDocRef(code);
+    let docRef = getEventDocRef(code);
 
     if (!isAuth || !docRef) {
         window.showToast("Cloud connection unavailable. Please check Firebase configuration.");
@@ -114,6 +110,16 @@ async function listenToCloudEvent(code) {
     }
 
     try {
+        // Check if doc exists in primary path, otherwise check root
+        const snap = await getDoc(docRef);
+        if (!snap.exists() && db) {
+            const rootRef = doc(db, 'events', code.trim().toUpperCase());
+            const rootSnap = await getDoc(rootRef);
+            if (rootSnap.exists()) {
+                docRef = rootRef;
+            }
+        }
+
         eventUnsubscribe = onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
                 activeEventData = docSnap.data();
@@ -192,7 +198,7 @@ function setLoading(loading) {
     if (icon) icon.classList.toggle('hidden', loading);
 }
 
-// Verify Code on Firestore Cloud
+// Verify Code on Firestore Cloud across artifact path and root path
 async function checkEventCodeOnCloud(code) {
     const isAuth = await ensureAuthenticated();
     if (!isAuth || !db) {
@@ -200,15 +206,20 @@ async function checkEventCodeOnCloud(code) {
     }
 
     const cleanCode = code.trim().toUpperCase();
+    
+    // 1. Try Artifact Path: /artifacts/{appId}/public/data/events/{code}
     let docRef = getEventDocRef(cleanCode);
     let snap = await getDoc(docRef);
 
-    if (!snap.exists() && typeof __app_id !== 'undefined' && db) {
-        const fallbackRef = doc(db, 'events', cleanCode);
-        const fallbackSnap = await getDoc(fallbackRef);
-        if (fallbackSnap.exists()) {
-            return fallbackSnap;
-        }
+    if (snap.exists()) {
+        return snap;
+    }
+
+    // 2. Fallback Check Root Path: /events/{code}
+    const fallbackRef = doc(db, 'events', cleanCode);
+    const fallbackSnap = await getDoc(fallbackRef);
+    if (fallbackSnap.exists()) {
+        return fallbackSnap;
     }
 
     return snap;
