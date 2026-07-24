@@ -226,7 +226,7 @@ window.handleLoginSubmit = async function(e) {
         } else {
             // Register brand-new event to Cloud Firestore
             const eventNameInput = document.getElementById('register-event-name')?.value.trim() || `${currentSecretCode} Event`;
-            const groupSizeInput = parseInt(document.getElementById('register-group-size')?.value, 10) || 5;
+            const groupSizeInput = parseInt(document.getElementById('register-group-size')?.value, 10) || 0;
 
             const newEventObj = {
                 name: eventNameInput,
