@@ -49,7 +49,7 @@ window.addEventListener('resize', () => {
     }
 });
 
-// Ensure Authentication Promise resolves completely
+// Authentication Initialization
 let authPromise = null;
 function ensureAuthenticated() {
     if (!auth) return Promise.resolve(false);
@@ -76,7 +76,7 @@ function ensureAuthenticated() {
     return authPromise;
 }
 
-// Helper to resolve the correct Firestore Doc Reference
+// Resolve Doc Ref Path
 function getEventDocRef(code) {
     if (!db) return null;
     const cleanCode = code.trim().toUpperCase();
@@ -137,7 +137,7 @@ function updateUserStateFromActiveData() {
     }
 }
 
-// Sync Event Data directly to Firestore Cloud
+// Sync Event Data to Firestore
 async function syncEventToCloud(code, updatedEventData) {
     activeEventData = updatedEventData;
     renderCurrentPage();
@@ -153,7 +153,7 @@ async function syncEventToCloud(code, updatedEventData) {
     }
 }
 
-// Switch between Join and Create Event Mode
+// Auth Mode Switcher
 window.setAuthMode = function(mode) {
     isRegisterMode = (mode === 'create');
     
@@ -178,7 +178,6 @@ window.setAuthMode = function(mode) {
     }
 };
 
-// UI Spinner Helper
 function setLoading(loading) {
     const btn = document.getElementById('login-submit-btn');
     const spinner = document.getElementById('login-spinner');
@@ -189,7 +188,7 @@ function setLoading(loading) {
     if (icon) icon.classList.toggle('hidden', loading);
 }
 
-// Check existing event code directly on Firestore Cloud
+// Verify Code on Firestore Cloud
 async function checkEventCodeOnCloud(code) {
     const isAuth = await ensureAuthenticated();
     if (!isAuth || !db) {
@@ -200,7 +199,6 @@ async function checkEventCodeOnCloud(code) {
     let docRef = getEventDocRef(cleanCode);
     let snap = await getDoc(docRef);
 
-    // Secondary fallback check on root level 'events' collection
     if (!snap.exists() && typeof __app_id !== 'undefined' && db) {
         const fallbackRef = doc(db, 'events', cleanCode);
         const fallbackSnap = await getDoc(fallbackRef);
@@ -212,7 +210,7 @@ async function checkEventCodeOnCloud(code) {
     return snap;
 }
 
-// Handle Login / Registration Form Submission on button click
+// Form Submission & Event Validation
 window.handleLoginSubmit = async function(e) {
     if (e && e.preventDefault) e.preventDefault();
     
@@ -237,7 +235,6 @@ window.handleLoginSubmit = async function(e) {
     let cloudError = null;
 
     try {
-        // Explicitly check for existing event code on Cloud
         eventSnap = await checkEventCodeOnCloud(currentSecretCode);
     } catch (err) {
         console.error("Cloud check error:", err);
@@ -252,7 +249,6 @@ window.handleLoginSubmit = async function(e) {
 
     const eventExistsOnCloud = eventSnap && eventSnap.exists();
 
-    // 1. JOIN MODE: Check existing event code on click
     if (!isRegisterMode) {
         if (!eventExistsOnCloud) {
             setLoading(false);
@@ -260,14 +256,12 @@ window.handleLoginSubmit = async function(e) {
             return false;
         }
     } else {
-        // 2. CREATE MODE: Prevent registering duplicate codes
         if (eventExistsOnCloud) {
             setLoading(false);
             window.showToast(`Code "${currentSecretCode}" already exists on Cloud! Switch to "Join Event" to enter.`);
             window.setAuthMode('join');
             return false;
         } else {
-            // Register new event on Cloud
             const eventNameInput = document.getElementById('register-event-name')?.value.trim() || `${currentSecretCode} Event`;
             const groupSizeInput = parseInt(document.getElementById('register-group-size')?.value, 10) || 5;
 
