@@ -478,7 +478,7 @@ function renderLeaderboard(containerId) {
             <div>
                 <div class="text-xs font-bold text-slate-800 font-mono flex items-center gap-1.5">
                     <span>${dateStr}</span>
-                    ${isAllFree ? '<span class="px-1.5 py-0.2 bg-amber-400 text-slate-900 font-sans text-[9px] sm:text-[10px] rounded font-black">100% 全員有空</span>' : ''}
+                    ${isAllFree ? '<span class="px-1.5 py-0.2 bg-amber-400 text-slate-900 font-sans text-[9px] sm:text-[10px] rounded font-black">All member FREE!💯</span>' : ''}
                 </div>
                 <div class="w-24 sm:w-32 bg-slate-200 h-1.5 rounded-full mt-1.5 overflow-hidden">
                     <div class="bg-teal-500 h-full rounded-full" style="width: ${percent}%"></div>
@@ -486,7 +486,7 @@ function renderLeaderboard(containerId) {
             </div>
             <div class="text-right">
                 <span class="text-xs sm:text-sm font-black text-slate-800">${count}</span>
-                <span class="text-[11px] text-slate-500">/ ${eventObj.groupSize} 有空</span>
+                <span class="text-[11px] text-slate-500">/ ${eventObj.groupSize} Free</span>
             </div>
         `;
         container.appendChild(item);
