@@ -80,7 +80,7 @@ function ensureAuthenticated() {
     return authPromise;
 }
 
-// Resolve Doc Ref Path (Always use standard artifact path with default-app-id fallback)
+// Resolve Doc Ref Path
 function getEventDocRef(code) {
     if (!db) return null;
     const cleanCode = code.trim().toUpperCase();
@@ -97,6 +97,15 @@ let calCurrentDate = new Date(2026, 7, 1);
 let eventUnsubscribe = null;
 let isRegisterMode = false;
 
+// Helper: Check if there are unsaved draft modifications
+function hasUnsavedChanges() {
+    if (mySelectedDates.size !== submittedDates.size) return true;
+    for (let d of mySelectedDates) {
+        if (!submittedDates.has(d)) return true;
+    }
+    return false;
+}
+
 // Real-time Firestore Event Fetcher
 async function listenToCloudEvent(code) {
     if (eventUnsubscribe) eventUnsubscribe();
@@ -110,7 +119,6 @@ async function listenToCloudEvent(code) {
     }
 
     try {
-        // Check if doc exists in primary path, otherwise check root
         const snap = await getDoc(docRef);
         if (!snap.exists() && db) {
             const rootRef = doc(db, 'events', code.trim().toUpperCase());
@@ -198,7 +206,7 @@ function setLoading(loading) {
     if (icon) icon.classList.toggle('hidden', loading);
 }
 
-// Verify Code on Firestore Cloud across artifact path and root path
+// Verify Code on Firestore Cloud
 async function checkEventCodeOnCloud(code) {
     const isAuth = await ensureAuthenticated();
     if (!isAuth || !db) {
@@ -207,7 +215,6 @@ async function checkEventCodeOnCloud(code) {
 
     const cleanCode = code.trim().toUpperCase();
     
-    // 1. Try Artifact Path: /artifacts/{appId}/public/data/events/{code}
     let docRef = getEventDocRef(cleanCode);
     let snap = await getDoc(docRef);
 
@@ -215,7 +222,6 @@ async function checkEventCodeOnCloud(code) {
         return snap;
     }
 
-    // 2. Fallback Check Root Path: /events/{code}
     const fallbackRef = doc(db, 'events', cleanCode);
     const fallbackSnap = await getDoc(fallbackRef);
     if (fallbackSnap.exists()) {
@@ -259,7 +265,7 @@ window.handleLoginSubmit = async function(e) {
     if (cloudError) {
         setLoading(false);
         if (cloudError.message === "MISSING_CONFIG" || !db) {
-            window.showToast("未偵測到 Firebase 金鑰！請在 script.js 第 12 行填入 Firebase API Key。");
+            window.showToast("未偵測到 Firebase 金鑰！請在 script.js 第 13 行填入 Firebase API Key。");
         } else {
             window.showToast("無法連接雲端，請檢查網路連線或 Firebase 權限設定。");
         }
@@ -304,8 +310,6 @@ window.handleLoginSubmit = async function(e) {
 
     document.getElementById('user-avatar-initial').innerText = currentUserName.charAt(0).toUpperCase();
     document.getElementById('user-name-display').innerText = currentUserName;
-    document.getElementById('user-info-pill').classList.remove('hidden');
-    document.getElementById('user-info-pill').classList.add('flex');
     document.getElementById('header-event-badge').innerText = currentSecretCode;
 
     window.navigate('calendar');
@@ -326,8 +330,6 @@ window.logout = function() {
     const remBox = document.getElementById('remember-me-checkbox');
     if (remBox) remBox.checked = false;
 
-    document.getElementById('user-info-pill').classList.add('hidden');
-    document.getElementById('user-info-pill').classList.remove('flex');
     window.navigate('login');
 };
 
@@ -341,7 +343,23 @@ window.navigate = function(page) {
 
     const mainHeader = document.getElementById('main-header');
     if (mainHeader) {
-        mainHeader.classList.toggle('hidden', page === 'login');
+        mainHeader.classList.remove('hidden');
+    }
+
+    const navTabs = document.getElementById('main-nav-tabs');
+    if (navTabs) {
+        navTabs.classList.toggle('hidden', page === 'login');
+    }
+
+    const userInfoPill = document.getElementById('user-info-pill');
+    if (userInfoPill) {
+        if (page === 'login') {
+            userInfoPill.classList.add('hidden');
+            userInfoPill.classList.remove('flex');
+        } else {
+            userInfoPill.classList.remove('hidden');
+            userInfoPill.classList.add('flex');
+        }
     }
 
     document.getElementById('page-login').classList.toggle('hidden', page !== 'login');
@@ -475,6 +493,22 @@ function renderLeaderboard(containerId) {
     });
 }
 
+function updateSaveButtonState() {
+    const saveBtn = document.getElementById('save-response-btn');
+    const saveBtnText = document.getElementById('save-btn-text');
+    if (!saveBtn || !saveBtnText) return;
+
+    const unsaved = hasUnsavedChanges();
+
+    if (unsaved) {
+        saveBtn.className = "save-response-btn animate-pulse px-3.5 py-2 bg-gradient-to-r from-amber-500 via-emerald-600 to-teal-600 hover:from-amber-400 hover:to-teal-500 text-white text-xs font-bold rounded-xl shadow-lg ring-4 ring-amber-400/40 flex items-center gap-1.5 transition-all transform hover:scale-105";
+        saveBtnText.innerHTML = `Save Unsaved Free Days! <span class="ml-1 px-1.5 py-0.2 bg-amber-300 text-slate-900 text-[10px] rounded-full font-black animate-bounce inline-block">!</span>`;
+    } else {
+        saveBtn.className = "save-response-btn px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-1.5 transition-all";
+        saveBtnText.innerText = "Save Response";
+    }
+}
+
 function renderCalendar() {
     if (!currentSecretCode || !activeEventData) return;
 
@@ -574,11 +608,17 @@ function renderCalendar() {
             }
         }
 
+        // Indicator Icon Logic: ALL FREE includes checkbox icon on the left
         let statusIndicator = '';
         if (isAllFree) {
-            statusIndicator = isCompactMode 
+            const tickIcon = isDraftSelected
+                ? '<i data-lucide="check-square" class="w-3.5 h-3.5 text-slate-900"></i>'
+                : '<i data-lucide="square" class="w-3.5 h-3.5 text-slate-600 hover:text-slate-900"></i>';
+            const badgeText = isCompactMode 
                 ? '<span class="text-[8px] font-black bg-slate-900 text-amber-300 px-1 py-0.2 rounded">100%</span>' 
                 : '<span class="text-[10px] font-black tracking-tighter px-1 py-0.5 bg-slate-900 text-amber-300 rounded-md">ALL FREE</span>';
+            
+            statusIndicator = `<div class="flex items-center gap-1">${tickIcon}${badgeText}</div>`;
         } else if (isSubmittedResponse && isDraftSelected) {
             statusIndicator = isCompactMode 
                 ? '<i data-lucide="check" class="w-3 h-3 text-white"></i>'
@@ -613,6 +653,7 @@ function renderCalendar() {
     }
 
     renderLeaderboard('leaderboard-container-home');
+    updateSaveButtonState();
 
     if (window.lucide) window.lucide.createIcons();
 }
@@ -790,4 +831,5 @@ window.onload = function() {
         }
     }
     ensureAuthenticated();
+    window.navigate('login');
 };
