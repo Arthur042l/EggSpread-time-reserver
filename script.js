@@ -263,7 +263,8 @@ window.handleLoginSubmit = async function(e) {
             return false;
         } else {
             const eventNameInput = document.getElementById('register-event-name')?.value.trim() || `${currentSecretCode} Event`;
-            const groupSizeInput = parseInt(document.getElementById('register-group-size')?.value, 10) || 5;
+            const rawGroupSize = parseInt(document.getElementById('register-group-size')?.value, 10);
+            const groupSizeInput = (!isNaN(rawGroupSize) && rawGroupSize > 0) ? rawGroupSize : 5;
 
             const newEventObj = {
                 name: eventNameInput,
@@ -313,10 +314,18 @@ window.logout = function() {
 
 let activePage = 'login';
 window.navigate = function(page) {
+    // Prevent accessing other views without entering an event code first
     if (page !== 'login' && (!currentSecretCode || !currentUserName)) {
+        window.showToast("Please enter an event code and your name first!");
         page = 'login';
     }
     activePage = page;
+
+    // Toggle Header visibility (Hidden on Login page)
+    const mainHeader = document.getElementById('main-header');
+    if (mainHeader) {
+        mainHeader.classList.toggle('hidden', page === 'login');
+    }
 
     document.getElementById('page-login').classList.toggle('hidden', page !== 'login');
     document.getElementById('page-calendar').classList.toggle('hidden', page !== 'calendar');
