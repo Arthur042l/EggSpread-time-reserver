@@ -48,25 +48,46 @@ window.addEventListener('resize', () => {
     }
 });
 
-// Authenticate with Firebase before Firestore operations
-async function initAuth() {
-    if (!auth) return false;
-    if (auth.currentUser) return true;
+// Ensure Authentication Promise resolves completely
+let authPromise = null;
+function ensureAuthenticated() {
+    if (!auth) return Promise.resolve(false);
+    if (auth.currentUser) return Promise.resolve(true);
+    
+    if (!authPromise) {
+        authPromise = new Promise((resolve) => {
+            const unsubscribe = onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    unsubscribe();
+                    resolve(true);
+                }
+            });
 
-    try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-            await signInAnonymously(auth);
-        }
-        return true;
-    } catch (e) {
-        console.warn("Cloud Auth Notice: Could not authenticate with Firebase.", e);
-        return false;
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                signInWithCustomToken(auth, __initial_auth_token).catch(() => {
+                    signInAnonymously(auth).catch(() => resolve(false));
+                });
+            } else {
+                signInAnonymously(auth).catch(() => resolve(false));
+            }
+        });
     }
+    return authPromise;
 }
 
-// Active App State (NO LOCAL MEMORY OF EVENTS - Pure Cloud Firestore)
+// Helper to resolve the correct Firestore Doc Reference
+function getEventDocRef(code) {
+    if (!db) return null;
+    const cleanCode = code.trim().toUpperCase();
+    
+    // Try nested artifact path first, fallback to root if not using artifact wrapper
+    if (typeof __app_id !== 'undefined' && __app_id) {
+        return doc(db, 'artifacts', appId, 'public', 'data', 'events', cleanCode);
+    }
+    return doc(db, 'events', cleanCode);
+}
+
+// Active App State
 let activeEventData = null;
 let currentSecretCode = null;
 let currentUserName = null;
@@ -80,18 +101,16 @@ let isRegisterMode = false;
 async function listenToCloudEvent(code) {
     if (eventUnsubscribe) eventUnsubscribe();
 
-    const cleanCode = code ? code.trim().toUpperCase() : '';
-    const isAuthenticated = await initAuth();
+    const isAuth = await ensureAuthenticated();
+    const docRef = getEventDocRef(code);
 
-    if (!isAuthenticated || !db) {
+    if (!isAuth || !docRef) {
         window.showToast("Cloud connection unavailable.");
         return;
     }
 
     try {
-        const eventDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', cleanCode);
-        
-        eventUnsubscribe = onSnapshot(eventDocRef, (docSnap) => {
+        eventUnsubscribe = onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
                 activeEventData = docSnap.data();
             } else {
@@ -101,10 +120,10 @@ async function listenToCloudEvent(code) {
             updateUserStateFromActiveData();
             renderCurrentPage();
         }, (error) => {
-            console.warn("Firestore snapshot error:", error);
+            console.error("Firestore snapshot error:", error);
         });
     } catch (err) {
-        console.warn("Unable to attach Cloud listener:", err);
+        console.error("Unable to attach Cloud listener:", err);
     }
 }
 
@@ -120,16 +139,15 @@ function updateUserStateFromActiveData() {
 
 // Sync Event Data directly to Firestore Cloud
 async function syncEventToCloud(code, updatedEventData) {
-    const cleanCode = code ? code.trim().toUpperCase() : '';
     activeEventData = updatedEventData;
     renderCurrentPage();
 
-    const isAuthenticated = await initAuth();
-    if (!isAuthenticated || !db || !cleanCode) return;
+    const isAuth = await ensureAuthenticated();
+    const docRef = getEventDocRef(code);
+    if (!isAuth || !docRef) return;
 
     try {
-        const eventDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', cleanCode);
-        await setDoc(eventDocRef, updatedEventData, { merge: true });
+        await setDoc(docRef, updatedEventData, { merge: true });
     } catch (e) {
         console.error("Firestore cloud sync failed:", e);
     }
@@ -160,7 +178,7 @@ window.setAuthMode = function(mode) {
     }
 };
 
-// UI Spinner Helper for Login/Signup Button
+// UI Spinner Helper
 function setLoading(loading) {
     const btn = document.getElementById('login-submit-btn');
     const spinner = document.getElementById('login-spinner');
@@ -171,7 +189,30 @@ function setLoading(loading) {
     if (icon) icon.classList.toggle('hidden', loading);
 }
 
-// Handle Login / Registration Form Submission with Loading Circle & Direct Cloud Query
+// Fetch event document directly from Cloud
+async function fetchEventFromCloud(code) {
+    const isAuth = await ensureAuthenticated();
+    if (!isAuth) {
+        throw new Error("Authentication failed. Check network connection.");
+    }
+
+    // Try primary docRef
+    let docRef = getEventDocRef(code);
+    let snap = await getDoc(docRef);
+
+    // Fallback check on root collection 'events' if nested artifact doc wasn't found
+    if (!snap.exists() && typeof __app_id !== 'undefined' && db) {
+        const fallbackRef = doc(db, 'events', code.trim().toUpperCase());
+        const fallbackSnap = await getDoc(fallbackRef);
+        if (fallbackSnap.exists()) {
+            return fallbackSnap;
+        }
+    }
+
+    return snap;
+}
+
+// Handle Login / Registration Form Submission
 window.handleLoginSubmit = async function(e) {
     if (e && e.preventDefault) e.preventDefault();
     
@@ -181,10 +222,8 @@ window.handleLoginSubmit = async function(e) {
 
     if (!codeInput || !nameInput) return false;
 
-    // Show loading spinner
     setLoading(true);
 
-    // REMEMBER ME: Only save user's Name if explicitly checked
     if (rememberMe) {
         localStorage.setItem('dateMatch_savedUserName', nameInput);
     } else {
@@ -194,39 +233,42 @@ window.handleLoginSubmit = async function(e) {
     currentSecretCode = codeInput;
     currentUserName = nameInput;
 
-    const isAuthenticated = await initAuth();
-
-    // Query Firestore Cloud directly for existing event document
     let eventSnap = null;
-    if (isAuthenticated && db) {
-        try {
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', currentSecretCode);
-            eventSnap = await getDoc(docRef);
-        } catch (err) {
-            console.warn("Direct Cloud check notice:", err);
-        }
+    let cloudError = null;
+
+    try {
+        eventSnap = await fetchEventFromCloud(currentSecretCode);
+    } catch (err) {
+        console.error("Cloud fetch error:", err);
+        cloudError = err;
+    }
+
+    if (cloudError) {
+        setLoading(false);
+        window.showToast("Cloud fetch error. Please check your internet connection.");
+        return false;
     }
 
     const eventExistsOnCloud = eventSnap && eventSnap.exists();
 
-    // 1. JOIN MODE: Event MUST exist in Cloud
+    // 1. JOIN MODE: Event MUST exist on Cloud
     if (!isRegisterMode) {
         if (!eventExistsOnCloud) {
             setLoading(false);
-            window.showToast(`Event "${currentSecretCode}" not found! Please check your code or switch to Create Event.`);
+            window.showToast(`Event "${currentSecretCode}" not found on Cloud! Please check your code or switch to "Create Event".`);
             return false;
         }
     } else {
-        // 2. CREATE MODE: Event MUST NOT exist in Cloud (prevent duplicates)
+        // 2. CREATE MODE: Event MUST NOT exist on Cloud
         if (eventExistsOnCloud) {
             setLoading(false);
-            window.showToast(`This code already exists in Cloud! Redirecting to Join mode...`);
+            window.showToast(`Code "${currentSecretCode}" already exists on Cloud! Redirecting to Join mode...`);
             window.setAuthMode('join');
             return false;
         } else {
-            // Register brand-new event to Cloud Firestore
+            // Register brand new event to Cloud
             const eventNameInput = document.getElementById('register-event-name')?.value.trim() || `${currentSecretCode} Event`;
-            const groupSizeInput = parseInt(document.getElementById('register-group-size')?.value, 10) || 0;
+            const groupSizeInput = parseInt(document.getElementById('register-group-size')?.value, 10) || 5;
 
             const newEventObj = {
                 name: eventNameInput,
@@ -304,7 +346,6 @@ function renderCurrentPage() {
     if (activePage === 'admin') renderAdminPage();
 }
 
-// Calendar Controls
 window.changeCalMonth = function(delta) {
     calCurrentDate = new Date(calCurrentDate.getFullYear(), calCurrentDate.getMonth() + delta, 1);
     renderCalendar();
@@ -324,7 +365,6 @@ window.toggleDateSelection = function(dateStr) {
     renderCalendar();
 };
 
-// Save Response
 window.submitFreeDays = async function() {
     if (!currentSecretCode || !currentUserName || !activeEventData) return;
 
@@ -364,7 +404,6 @@ function checkAndTriggerConfetti() {
     }
 }
 
-// Render Shared Best Matches Dashboard Leaderboard
 function renderLeaderboard(containerId) {
     if (!currentSecretCode || !activeEventData) return;
 
@@ -552,7 +591,6 @@ function renderCalendar() {
         }
     }
 
-    // Render Home Leaderboard Dashboard
     renderLeaderboard('leaderboard-container-home');
 
     if (window.lucide) window.lucide.createIcons();
@@ -613,7 +651,6 @@ function renderAdminPage() {
     document.getElementById('setting-event-code').value = eventObj.code;
     document.getElementById('setting-group-size').value = eventObj.groupSize || 5;
 
-    // Render Admin Leaderboard Dashboard
     renderLeaderboard('leaderboard-container-admin');
 }
 
@@ -720,11 +757,9 @@ window.onload = function() {
     if (window.lucide) window.lucide.createIcons();
     checkDeviceMode();
 
-    // Ensure Remember Me checkbox defaults to unchecked
     const remBox = document.getElementById('remember-me-checkbox');
     if (remBox) remBox.checked = false;
 
-    // Check LocalStorage ONLY for saved user's Name if user previously opted in
     const savedName = localStorage.getItem('dateMatch_savedUserName');
     if (savedName) {
         const nameEl = document.getElementById('login-user-name');
@@ -733,5 +768,5 @@ window.onload = function() {
             if (remBox) remBox.checked = true;
         }
     }
-    initAuth();
+    ensureAuthenticated();
 };
