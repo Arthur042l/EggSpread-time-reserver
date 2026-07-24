@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 // Safe Firebase Initialization
 let app = null;
@@ -9,19 +9,23 @@ let db = null;
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-// Initialize Firebase
-try {
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-        apiKey: "AIzaSyDm0L6F6CGmrbsESTMLhOek74a5ttySP04",
-        authDomain: "eggspread-time-reserver.firebaseapp.com",
-        projectId: "eggspread-time-reserver",
-        storageBucket: "eggspread-time-reserver.firebasestorage.app",
-        messagingSenderId: "792367749553",
-        appId: "1:792367749553:web:365c504ae65ccc7fcf4590",
-        measurementId: "G-LLG556KH52"
-    };
+// 💡 如果在 GitHub Pages 上運行，請在此處填入你從 Firebase Console 取得的專案設定：
+const defaultFirebaseConfig = {
+    apiKey: "AIzaSyDm0L6F6CGmrbsESTMLhOek74a5ttySP04",
+    authDomain: "eggspread-time-reserver.firebaseapp.com",
+    projectId: "eggspread-time-reserver",
+    storageBucket: "eggspread-time-reserver.firebasestorage.app",
+    messagingSenderId: "792367749553",
+    appId: "1:792367749553:web:365c504ae65ccc7fcf4590",
+    measurementId: "G-LLG556KH52"
+};
 
-    if (firebaseConfig && firebaseConfig.projectId) {
+try {
+    const firebaseConfig = (typeof __firebase_config !== 'undefined' && __firebase_config) 
+        ? JSON.parse(__firebase_config) 
+        : defaultFirebaseConfig;
+
+    if (firebaseConfig && firebaseConfig.apiKey && firebaseConfig.projectId) {
         app = initializeApp(firebaseConfig);
         auth = getAuth(app);
         db = getFirestore(app);
@@ -105,7 +109,7 @@ async function listenToCloudEvent(code) {
     const docRef = getEventDocRef(code);
 
     if (!isAuth || !docRef) {
-        window.showToast("Cloud connection unavailable.");
+        window.showToast("Cloud connection unavailable. Please check Firebase configuration.");
         return;
     }
 
@@ -192,7 +196,7 @@ function setLoading(loading) {
 async function checkEventCodeOnCloud(code) {
     const isAuth = await ensureAuthenticated();
     if (!isAuth || !db) {
-        throw new Error("Authentication failed or Cloud DB not available.");
+        throw new Error("MISSING_CONFIG");
     }
 
     const cleanCode = code.trim().toUpperCase();
@@ -243,7 +247,11 @@ window.handleLoginSubmit = async function(e) {
 
     if (cloudError) {
         setLoading(false);
-        window.showToast("Cloud check failed. Please verify internet connection.");
+        if (cloudError.message === "MISSING_CONFIG" || !db) {
+            window.showToast("未偵測到 Firebase 金鑰！請在 script.js 第 12 行填入 Firebase API Key。");
+        } else {
+            window.showToast("無法連接雲端，請檢查網路連線或 Firebase 權限設定。");
+        }
         return false;
     }
 
@@ -252,13 +260,13 @@ window.handleLoginSubmit = async function(e) {
     if (!isRegisterMode) {
         if (!eventExistsOnCloud) {
             setLoading(false);
-            window.showToast(`Event code "${currentSecretCode}" not found! Please check your code or switch to "Create Event".`);
+            window.showToast(`找不到活動代碼 "${currentSecretCode}"！請檢查代碼或切換至 "Create Event"。`);
             return false;
         }
     } else {
         if (eventExistsOnCloud) {
             setLoading(false);
-            window.showToast(`Code "${currentSecretCode}" already exists on Cloud! Switch to "Join Event" to enter.`);
+            window.showToast(`代碼 "${currentSecretCode}" 已存在於雲端！請切換至 "Join Event" 直接進入。`);
             window.setAuthMode('join');
             return false;
         } else {
@@ -290,7 +298,7 @@ window.handleLoginSubmit = async function(e) {
     document.getElementById('header-event-badge').innerText = currentSecretCode;
 
     window.navigate('calendar');
-    window.showToast(`Welcome, ${currentUserName}! Joined event.`);
+    window.showToast(`歡迎，${currentUserName}！成功進入活動。`);
     return false;
 };
 
@@ -314,14 +322,12 @@ window.logout = function() {
 
 let activePage = 'login';
 window.navigate = function(page) {
-    // Prevent accessing other views without entering an event code first
     if (page !== 'login' && (!currentSecretCode || !currentUserName)) {
-        window.showToast("Please enter an event code and your name first!");
+        window.showToast("請先輸入活動代碼與您的名字！");
         page = 'login';
     }
     activePage = page;
 
-    // Toggle Header visibility (Hidden on Login page)
     const mainHeader = document.getElementById('main-header');
     if (mainHeader) {
         mainHeader.classList.toggle('hidden', page === 'login');
@@ -385,7 +391,7 @@ window.submitFreeDays = async function() {
     submittedDates = new Set(mySelectedDates);
     await syncEventToCloud(currentSecretCode, updatedEvent);
 
-    window.showToast("Response saved & submitted! 🎉");
+    window.showToast("已儲存並提交您的空閒日期！🎉");
     checkAndTriggerConfetti();
 };
 
@@ -426,7 +432,7 @@ function renderLeaderboard(containerId) {
     container.innerHTML = '';
 
     if (sortedDates.length === 0) {
-        container.innerHTML = `<div class="text-xs text-slate-400 italic py-4 text-center">No date submissions yet.</div>`;
+        container.innerHTML = `<div class="text-xs text-slate-400 italic py-4 text-center">尚無成員提交日期。</div>`;
         return;
     }
 
@@ -443,7 +449,7 @@ function renderLeaderboard(containerId) {
             <div>
                 <div class="text-xs font-bold text-slate-800 font-mono flex items-center gap-1.5">
                     <span>${dateStr}</span>
-                    ${isAllFree ? '<span class="px-1.5 py-0.2 bg-amber-400 text-slate-900 font-sans text-[9px] sm:text-[10px] rounded font-black">100% ALL FREE</span>' : ''}
+                    ${isAllFree ? '<span class="px-1.5 py-0.2 bg-amber-400 text-slate-900 font-sans text-[9px] sm:text-[10px] rounded font-black">100% 全員有空</span>' : ''}
                 </div>
                 <div class="w-24 sm:w-32 bg-slate-200 h-1.5 rounded-full mt-1.5 overflow-hidden">
                     <div class="bg-teal-500 h-full rounded-full" style="width: ${percent}%"></div>
@@ -451,7 +457,7 @@ function renderLeaderboard(containerId) {
             </div>
             <div class="text-right">
                 <span class="text-xs sm:text-sm font-black text-slate-800">${count}</span>
-                <span class="text-[11px] text-slate-500">/ ${eventObj.groupSize} free</span>
+                <span class="text-[11px] text-slate-500">/ ${eventObj.groupSize} 有空</span>
             </div>
         `;
         container.appendChild(item);
@@ -612,7 +618,7 @@ function renderMemberList() {
     document.getElementById('member-list-count').innerText = `${members.length} / ${eventObj.groupSize} expected responded`;
 
     if (members.length === 0) {
-        container.innerHTML = `<div class="col-span-2 text-center py-8 text-xs text-slate-400">No members have submitted availability yet.</div>`;
+        container.innerHTML = `<div class="col-span-2 text-center py-8 text-xs text-slate-400">尚無成員提交空閒時間。</div>`;
         return;
     }
 
@@ -628,18 +634,18 @@ function renderMemberList() {
                         ${mName.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                        <div class="text-sm font-bold text-slate-800">${mName} ${mName === currentUserName ? '(You)' : ''}</div>
-                        <div class="text-[11px] text-slate-500">${dates.length} days selected as free</div>
+                        <div class="text-sm font-bold text-slate-800">${mName} ${mName === currentUserName ? '(你)' : ''}</div>
+                        <div class="text-[11px] text-slate-500">已選擇 ${dates.length} 天有空</div>
                     </div>
                 </div>
                 <span class="text-xs font-mono font-bold px-2 py-1 bg-teal-100 text-teal-800 rounded-lg">
-                    ${dates.length} Free Days
+                    ${dates.length} 天有空
                 </span>
             </div>
             <div class="flex flex-wrap gap-1.5 pt-2 border-t border-slate-200/60">
                 ${dates.length > 0 
                     ? dates.map(d => `<span class="text-[11px] px-2 py-0.5 bg-white border border-slate-200 text-slate-700 font-mono font-semibold rounded-md">${d}</span>`).join('')
-                    : '<span class="text-xs text-slate-400 italic">No free dates marked.</span>'
+                    : '<span class="text-xs text-slate-400 italic">未標記任何日期。</span>'
                 }
             </div>
         `;
@@ -678,13 +684,13 @@ window.handleSaveSettings = async function(e) {
     currentSecretCode = newCode;
     document.getElementById('header-event-badge').innerText = currentSecretCode;
     await syncEventToCloud(currentSecretCode, updatedEvent);
-    window.showToast("Event settings saved to Cloud!");
+    window.showToast("活動設定已同步儲存至雲端！");
     renderAdminPage();
     return false;
 };
 
 window.clearEventResponses = async function() {
-    if (!confirm("Are you sure you want to clear all member responses for this event?")) return;
+    if (!confirm("確定要清空此活動的所有成員空閒時間回應嗎？")) return;
     if (!currentSecretCode || !activeEventData) return;
 
     const updatedEvent = {
@@ -695,7 +701,7 @@ window.clearEventResponses = async function() {
     mySelectedDates.clear();
     submittedDates.clear();
     await syncEventToCloud(currentSecretCode, updatedEvent);
-    window.showToast("Member responses reset on Cloud!");
+    window.showToast("已成功重置雲端回應！");
     renderAdminPage();
 };
 
@@ -709,7 +715,7 @@ window.exportEventJSON = function() {
     document.body.appendChild(dlAnchor);
     dlAnchor.click();
     dlAnchor.remove();
-    window.showToast("Data exported as JSON!");
+    window.showToast("資料已匯出為 JSON 檔案！");
 };
 
 window.triggerImportJSON = function() {
@@ -730,10 +736,10 @@ window.importEventJSON = function(e) {
                 const firstKey = Object.keys(imported)[0];
                 if (firstKey) await syncEventToCloud(firstKey, imported[firstKey]);
             }
-            window.showToast("Cloud Database successfully imported!");
+            window.showToast("已成功匯入資料並同步至雲端！");
             window.navigate('calendar');
         } catch(err) {
-            window.showToast("Error reading JSON file format.");
+            window.showToast("讀取 JSON 檔案格式失敗。");
         }
     };
     reader.readAsText(file);
@@ -749,7 +755,7 @@ window.showToast = function(msg) {
     setTimeout(() => {
         toast.classList.remove('translate-y-0', 'opacity-100');
         toast.classList.add('translate-y-16', 'opacity-0');
-    }, 3000);
+    }, 3500);
 };
 
 window.toggleAppInfoModal = function(show) {
