@@ -16,9 +16,10 @@
 </head>
 <body class="bg-custom-gradient min-h-screen text-slate-800 font-sans antialiased pb-12 transition-all">
 
-    <!-- Top Navbar (Hidden on Login Page) -->
-    <header id="main-header" class="hidden w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-700/60 sticky top-0 z-50 text-white">
+    <!-- Top Navbar (Always Visible across all views) -->
+    <header id="main-header" class="w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-700/60 sticky top-0 z-50 text-white">
         <div class="max-w-7xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-2">
+            <!-- Brand Logo & Name (DateMatch) -->
             <div class="flex items-center space-x-2 sm:space-x-3 cursor-pointer" onclick="navigate('calendar')">
                 <div class="p-1.5 sm:p-2 bg-gradient-to-tr from-teal-400 to-emerald-400 text-slate-900 rounded-xl shadow font-bold">
                     <i data-lucide="users" class="w-4 h-4 sm:w-5 sm:h-5"></i>
@@ -30,12 +31,14 @@
             </div>
 
             <div id="nav-actions" class="flex items-center space-x-1.5 sm:space-x-3">
-                <nav class="flex bg-slate-800/80 p-0.5 sm:p-1 rounded-xl border border-slate-700/50 text-[11px] sm:text-xs font-semibold">
+                <!-- Navigation Tabs (Hidden on Login page) -->
+                <nav id="main-nav-tabs" class="flex bg-slate-800/80 p-0.5 sm:p-1 rounded-xl border border-slate-700/50 text-[11px] sm:text-xs font-semibold">
                     <button id="tab-calendar" onclick="navigate('calendar')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-teal-400 bg-slate-700 shadow"><i data-lucide="calendar" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> Calendar</span></button>
                     <button id="tab-list" onclick="navigate('list')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-300 hover:text-white"><i data-lucide="list" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> Members</span></button>
                     <button id="tab-admin" onclick="navigate('admin')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-300 hover:text-white"><i data-lucide="settings" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> Settings</span></button>
                 </nav>
 
+                <!-- User Profile & Logout Pill (Hidden on Login page) -->
                 <div id="user-info-pill" class="hidden items-center gap-1.5 bg-slate-800 border border-slate-700 px-2 sm:px-3 py-1 rounded-xl">
                     <div id="user-avatar-initial" class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-teal-500 text-slate-900 font-bold text-xs flex items-center justify-center">?</div>
                     <span id="user-name-display" class="text-xs font-semibold text-slate-200 hidden lg:inline">User</span>
@@ -76,7 +79,6 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold uppercase text-slate-600 mb-1"><i data-lucide="users" class="w-3.5 h-3.5 inline text-teal-600"></i> Expected Responders Count</label>
-                        <!-- Left blank by default -->
                         <input type="number" id="register-group-size" min="1" max="50" placeholder="e.g. 5" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-bold">
                         <span class="text-[11px] text-slate-400">Total friends in group for 100% match</span>
                     </div>
@@ -104,45 +106,32 @@
 
         <!-- CALENDAR HOME PAGE -->
         <section id="page-calendar" class="hidden">
-            <!-- Desktop Layout: Left Column (Title & Dashboard) | Right Column (Calendar View fitted to viewport height) -->
+            <!-- Mobile: Title -> Calendar -> Legend & Dashboard | Desktop: Left Column (Title & Dashboard) | Right Column (Calendar View) -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:min-h-[calc(100vh-7rem)]">
                 
-                <!-- Left Sidebar Column on Desktop -->
-                <div class="lg:col-span-4 xl:col-span-4 flex flex-col space-y-4 sm:space-y-6">
-                    <!-- Title & Overview Card -->
-                    <div class="bg-white/90 backdrop-blur-xl p-4 sm:p-5 rounded-3xl shadow-xl border border-white/50 flex flex-col justify-between gap-3">
-                        <div>
-                            <div class="flex items-center justify-between gap-2">
-                                <h2 id="event-title-display" class="text-xl sm:text-2xl font-black text-slate-900">Event Title</h2>
-                                <span id="event-code-tag" class="text-xs font-mono font-bold bg-teal-100 text-teal-800 px-2 py-0.5 rounded-lg border">CODE</span>
-                            </div>
-                            <p class="text-xs text-slate-500 mt-1">Expected: <strong id="event-group-goal" class="text-slate-800">5</strong> members • Responded: <strong id="event-submitted-count" class="text-teal-600">3</strong> members</p>
+                <!-- Title & Overview Card (Mobile Order 1, Desktop Left Row 1) -->
+                <div class="order-1 lg:order-1 lg:col-span-4 bg-white/90 backdrop-blur-xl p-4 sm:p-5 rounded-3xl shadow-xl border border-white/50 flex flex-col justify-between gap-3 h-fit">
+                    <div>
+                        <div class="flex items-center justify-between gap-2">
+                            <h2 id="event-title-display" class="text-xl sm:text-2xl font-black text-slate-900">Event Title</h2>
+                            <span id="event-code-tag" class="text-xs font-mono font-bold bg-teal-100 text-teal-800 px-2 py-0.5 rounded-lg border">CODE</span>
                         </div>
-                        <div class="flex items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-2xl border">
-                            <div class="text-left text-xs">
-                                <div class="font-bold text-slate-700">Select dates FREE:</div>
-                                <div class="text-slate-500 text-[11px]">Check boxes, then save</div>
-                            </div>
-                            <button onclick="submitFreeDays()" class="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-1.5 transition-all">
-                                <i data-lucide="check-circle" class="w-4 h-4"></i><span>Save Response</span>
-                            </button>
-                        </div>
+                        <p class="text-xs text-slate-500 mt-1">Expected: <strong id="event-group-goal" class="text-slate-800">5</strong> members • Responded: <strong id="event-submitted-count" class="text-teal-600">3</strong> members</p>
                     </div>
-
-                    <!-- Best Match Dates Dashboard Card -->
-                    <div class="bg-white/90 backdrop-blur-xl p-4 sm:p-5 rounded-3xl shadow-xl border border-white/50 flex-1 flex flex-col justify-between space-y-3">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
-                                <i data-lucide="trophy" class="w-5 h-5 text-amber-500"></i> Best Match Dates
-                            </h3>
-                            <p class="text-xs text-slate-500 mt-0.5">Top dates sorted by highest response count</p>
+                    <div class="flex items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-2xl border">
+                        <div class="text-left text-xs">
+                            <div class="font-bold text-slate-700">Select dates FREE:</div>
+                            <div class="text-slate-500 text-[11px]">Check boxes, then save</div>
                         </div>
-                        <div id="leaderboard-container-home" class="space-y-2 max-h-64 lg:max-h-[calc(100vh-22rem)] overflow-y-auto pr-1"></div>
+                        <!-- Save Response Button with Animation Container -->
+                        <button onclick="submitFreeDays()" id="save-response-btn" class="save-response-btn px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-1.5 transition-all">
+                            <i data-lucide="check-circle" class="w-4 h-4"></i><span id="save-btn-text">Save Response</span>
+                        </button>
                     </div>
                 </div>
 
-                <!-- Right Main Column on Desktop (Calendar View) -->
-                <div class="lg:col-span-8 xl:col-span-8 bg-white/90 backdrop-blur-xl p-3.5 sm:p-6 rounded-3xl shadow-2xl border border-white/50 flex flex-col justify-between h-full">
+                <!-- Calendar View Card (Mobile Order 2, Desktop Right Column Span 2 Rows) -->
+                <div class="order-2 lg:order-2 lg:col-span-8 lg:row-span-2 bg-white/90 backdrop-blur-xl p-3.5 sm:p-6 rounded-3xl shadow-2xl border border-white/50 flex flex-col justify-between h-full">
                     <div>
                         <!-- Month Bar -->
                         <div class="flex items-center justify-between mb-4 sm:mb-6">
@@ -159,13 +148,6 @@
                             </div>
                         </div>
 
-                        <!-- Legend -->
-                        <div class="flex flex-wrap items-center gap-2.5 sm:gap-4 text-[11px] sm:text-xs font-semibold text-slate-600 mb-3 sm:mb-4 pb-2.5 border-b">
-                            <span class="flex items-center gap-1"><i data-lucide="check-square" class="w-3.5 h-3.5 text-teal-600"></i> Draft</span>
-                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span> Saved (Green)</span>
-                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> 100% ALL FREE! 🎉</span>
-                        </div>
-
                         <!-- Weekdays Header -->
                         <div class="grid grid-cols-7 mb-2 text-center text-[10px] sm:text-xs font-bold text-slate-400 uppercase">
                             <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
@@ -173,7 +155,26 @@
 
                         <!-- Calendar Days Grid -->
                         <div id="calendar-days-grid" class="grid grid-cols-7 gap-1 sm:gap-2 lg:gap-3"></div>
+
+                        <!-- Legend Markings (Placed Under Calendar in Mobile & Desktop) -->
+                        <div class="flex flex-wrap items-center gap-2.5 sm:gap-4 text-[11px] sm:text-xs font-semibold text-slate-600 mt-4 pt-3 border-t">
+                            <span class="flex items-center gap-1"><i data-lucide="check-square" class="w-3.5 h-3.5 text-teal-600"></i> Draft</span>
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span> Saved (Green)</span>
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> 100% ALL FREE! 🎉</span>
+                        </div>
                     </div>
+                </div>
+
+                <!-- Best Match Dates Dashboard Card (Mobile Order 3 - Directly Under Calendar, Desktop Left Row 2) -->
+                <div class="order-3 lg:order-3 lg:col-span-4 bg-white/90 backdrop-blur-xl p-4 sm:p-5 rounded-3xl shadow-xl border border-white/50 flex flex-col justify-start space-y-3 h-fit">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                            <i data-lucide="trophy" class="w-5 h-5 text-amber-500"></i> Best Match Dates
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Top dates sorted by highest response count</p>
+                    </div>
+                    <!-- Leaderboard list stacked cleanly from top -->
+                    <div id="leaderboard-container-home" class="flex flex-col justify-start space-y-2 max-h-64 lg:max-h-[calc(100vh-22rem)] overflow-y-auto pr-1"></div>
                 </div>
 
             </div>
@@ -238,7 +239,7 @@
                 <div class="bg-white/90 backdrop-blur-xl p-4 sm:p-6 rounded-3xl shadow-2xl border border-white/50 space-y-4">
                     <h3 class="text-base font-bold text-slate-900 flex items-center gap-2"><i data-lucide="trophy" class="w-5 h-5 text-amber-500"></i> Admin Dashboard</h3>
                     <p class="text-xs text-slate-500">Best match dates sorted by highest response count</p>
-                    <div id="leaderboard-container-admin" class="space-y-2 max-h-96 overflow-y-auto pr-1"></div>
+                    <div id="leaderboard-container-admin" class="flex flex-col justify-start space-y-2 max-h-96 overflow-y-auto pr-1"></div>
                 </div>
             </div>
         </section>
