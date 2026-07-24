@@ -313,7 +313,7 @@ window.handleLoginSubmit = async function(e) {
     document.getElementById('header-event-badge').innerText = currentSecretCode;
 
     window.navigate('calendar');
-    window.showToast(`Welcome, ${currentUserName}! You've entered the Event successfully.`);
+    window.showToast(`Welcome, ${currentUserName}! You've entered the Event.`);
     return false;
 };
 
