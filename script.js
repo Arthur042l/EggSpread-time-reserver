@@ -6,7 +6,6 @@ import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/f
 let app = null;
 let auth = null;
 let db = null;
-let authPromise = null;
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
@@ -22,9 +21,11 @@ try {
         measurementId: "G-LLG556KH52"
     };
 
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
+    if (firebaseConfig && firebaseConfig.projectId) {
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+    }
 } catch (err) {
     console.warn("Firebase initialization warning:", err);
 }
