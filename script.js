@@ -29,7 +29,7 @@ try {
     console.warn("Firebase initialization warning:", err);
 }
 
-// Automatic Device Mode Detection (Compact vs Wide)
+// Device Mode Detection
 let isCompactMode = window.innerWidth < 768;
 
 function checkDeviceMode() {
@@ -80,7 +80,6 @@ function getEventDocRef(code) {
     if (!db) return null;
     const cleanCode = code.trim().toUpperCase();
     
-    // Try nested artifact path first, fallback to root if not using artifact wrapper
     if (typeof __app_id !== 'undefined' && __app_id) {
         return doc(db, 'artifacts', appId, 'public', 'data', 'events', cleanCode);
     }
@@ -189,20 +188,20 @@ function setLoading(loading) {
     if (icon) icon.classList.toggle('hidden', loading);
 }
 
-// Fetch event document directly from Cloud
-async function fetchEventFromCloud(code) {
+// Check existing event code directly on Firestore Cloud
+async function checkEventCodeOnCloud(code) {
     const isAuth = await ensureAuthenticated();
-    if (!isAuth) {
-        throw new Error("Authentication failed. Check network connection.");
+    if (!isAuth || !db) {
+        throw new Error("Authentication failed or Cloud DB not available.");
     }
 
-    // Try primary docRef
-    let docRef = getEventDocRef(code);
+    const cleanCode = code.trim().toUpperCase();
+    let docRef = getEventDocRef(cleanCode);
     let snap = await getDoc(docRef);
 
-    // Fallback check on root collection 'events' if nested artifact doc wasn't found
+    // Secondary fallback check on root level 'events' collection
     if (!snap.exists() && typeof __app_id !== 'undefined' && db) {
-        const fallbackRef = doc(db, 'events', code.trim().toUpperCase());
+        const fallbackRef = doc(db, 'events', cleanCode);
         const fallbackSnap = await getDoc(fallbackRef);
         if (fallbackSnap.exists()) {
             return fallbackSnap;
@@ -212,7 +211,7 @@ async function fetchEventFromCloud(code) {
     return snap;
 }
 
-// Handle Login / Registration Form Submission
+// Handle Login / Registration Form Submission on button click
 window.handleLoginSubmit = async function(e) {
     if (e && e.preventDefault) e.preventDefault();
     
@@ -237,36 +236,37 @@ window.handleLoginSubmit = async function(e) {
     let cloudError = null;
 
     try {
-        eventSnap = await fetchEventFromCloud(currentSecretCode);
+        // Explicitly check for existing event code on Cloud
+        eventSnap = await checkEventCodeOnCloud(currentSecretCode);
     } catch (err) {
-        console.error("Cloud fetch error:", err);
+        console.error("Cloud check error:", err);
         cloudError = err;
     }
 
     if (cloudError) {
         setLoading(false);
-        window.showToast("Cloud fetch error. Please check your internet connection.");
+        window.showToast("Cloud check failed. Please verify internet connection.");
         return false;
     }
 
     const eventExistsOnCloud = eventSnap && eventSnap.exists();
 
-    // 1. JOIN MODE: Event MUST exist on Cloud
+    // 1. JOIN MODE: Check existing event code on click
     if (!isRegisterMode) {
         if (!eventExistsOnCloud) {
             setLoading(false);
-            window.showToast(`Event "${currentSecretCode}" not found on Cloud! Please check your code or switch to "Create Event".`);
+            window.showToast(`Event code "${currentSecretCode}" not found! Please check your code or switch to "Create Event".`);
             return false;
         }
     } else {
-        // 2. CREATE MODE: Event MUST NOT exist on Cloud
+        // 2. CREATE MODE: Prevent registering duplicate codes
         if (eventExistsOnCloud) {
             setLoading(false);
-            window.showToast(`Code "${currentSecretCode}" already exists on Cloud! Redirecting to Join mode...`);
+            window.showToast(`Code "${currentSecretCode}" already exists on Cloud! Switch to "Join Event" to enter.`);
             window.setAuthMode('join');
             return false;
         } else {
-            // Register brand new event to Cloud
+            // Register new event on Cloud
             const eventNameInput = document.getElementById('register-event-name')?.value.trim() || `${currentSecretCode} Event`;
             const groupSizeInput = parseInt(document.getElementById('register-group-size')?.value, 10) || 5;
 
