@@ -34,8 +34,9 @@ try {
     console.warn("Firebase initialization warning:", err);
 }
 
-// Device Mode Detection
+// Optimized Mobile/Desktop Layout Detection (Prevents vertical address-bar resize thrashing)
 let isCompactMode = window.innerWidth < 768;
+let lastViewportWidth = window.innerWidth;
 
 function checkDeviceMode() {
     isCompactMode = window.innerWidth < 768;
@@ -46,10 +47,14 @@ function checkDeviceMode() {
 }
 
 window.addEventListener('resize', () => {
-    const wasCompact = isCompactMode;
-    checkDeviceMode();
-    if (wasCompact !== isCompactMode) {
-        renderCurrentPage();
+    // Only trigger re-render if horizontal width breakpoint changes
+    if (Math.abs(window.innerWidth - lastViewportWidth) > 20) {
+        lastViewportWidth = window.innerWidth;
+        const wasCompact = isCompactMode;
+        checkDeviceMode();
+        if (wasCompact !== isCompactMode) {
+            renderCurrentPage();
+        }
     }
 });
 
@@ -97,6 +102,15 @@ let calCurrentDate = new Date(2026, 7, 1);
 let eventUnsubscribe = null;
 let isRegisterMode = false;
 
+// Helper: Fast inline SVGs to avoid expensive full DOM icon scanning on mobile
+const SVG_ICONS = {
+    checkSquare: `<svg class="w-4 h-4 text-teal-600 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`,
+    square: `<svg class="w-4 h-4 text-slate-300 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>`,
+    checkSquareGold: `<svg class="w-4 h-4 text-slate-900 font-bold inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`,
+    squareGold: `<svg class="w-4 h-4 text-slate-700 hover:text-slate-900 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>`,
+    checkSaved: `<svg class="w-3 h-3 text-white inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+};
+
 // Helper: Check if there are unsaved draft modifications
 function hasUnsavedChanges() {
     if (mySelectedDates.size !== submittedDates.size) return true;
@@ -106,8 +120,8 @@ function hasUnsavedChanges() {
     return false;
 }
 
-// Real-time Firestore Event Fetcher
-async function listenToCloudEvent(code) {
+// Real-time Firestore Event Fetcher (Optimized to attach snapshot listener immediately)
+async function listenToCloudEvent(code, preFetchedSnap = null) {
     if (eventUnsubscribe) eventUnsubscribe();
 
     const isAuth = await ensureAuthenticated();
@@ -119,16 +133,12 @@ async function listenToCloudEvent(code) {
     }
 
     try {
-        const snap = await getDoc(docRef);
-        if (!snap.exists() && db) {
-            const rootRef = doc(db, 'events', code.trim().toUpperCase());
-            const rootSnap = await getDoc(rootRef);
-            if (rootSnap.exists()) {
-                docRef = rootRef;
-            }
+        let targetRef = docRef;
+        if (preFetchedSnap && preFetchedSnap.exists()) {
+            targetRef = preFetchedSnap.ref;
         }
 
-        eventUnsubscribe = onSnapshot(docRef, (docSnap) => {
+        eventUnsubscribe = onSnapshot(targetRef, (docSnap) => {
             if (docSnap.exists()) {
                 activeEventData = docSnap.data();
             } else {
@@ -304,7 +314,7 @@ window.handleLoginSubmit = async function(e) {
 
     mySelectedDates.clear();
     submittedDates.clear();
-    await listenToCloudEvent(currentSecretCode);
+    await listenToCloudEvent(currentSecretCode, eventSnap);
 
     setLoading(false);
 
@@ -608,20 +618,18 @@ function renderCalendar() {
             }
         }
 
-        // Indicator Icon Logic: ALL FREE shows only checkbox icon on gold background (No text badge)
+        // Indicator Icon Logic: Uses fast inline SVGs instead of scanning entire DOM on mobile
         let statusIndicator = '';
         if (isAllFree) {
-            statusIndicator = isDraftSelected
-                ? '<i data-lucide="check-square" class="w-4 h-4 text-slate-900 font-bold"></i>'
-                : '<i data-lucide="square" class="w-4 h-4 text-slate-700 hover:text-slate-900"></i>';
+            statusIndicator = isDraftSelected ? SVG_ICONS.checkSquareGold : SVG_ICONS.squareGold;
         } else if (isSubmittedResponse && isDraftSelected) {
             statusIndicator = isCompactMode 
-                ? '<i data-lucide="check" class="w-3 h-3 text-white"></i>'
-                : '<span class="text-[10px] font-bold px-1.5 py-0.5 bg-emerald-800 text-emerald-100 rounded-md flex items-center gap-0.5"><i data-lucide="check" class="w-3 h-3"></i> Saved</span>';
+                ? SVG_ICONS.checkSaved
+                : `<span class="text-[10px] font-bold px-1.5 py-0.5 bg-emerald-800 text-emerald-100 rounded-md flex items-center gap-0.5">${SVG_ICONS.checkSaved} Saved</span>`;
         } else if (isDraftSelected) {
-            statusIndicator = '<i data-lucide="check-square" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teal-600"></i>';
+            statusIndicator = SVG_ICONS.checkSquare;
         } else {
-            statusIndicator = '<i data-lucide="square" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-300"></i>';
+            statusIndicator = SVG_ICONS.square;
         }
 
         dCell.innerHTML = `
@@ -649,8 +657,6 @@ function renderCalendar() {
 
     renderLeaderboard('leaderboard-container-home');
     updateSaveButtonState();
-
-    if (window.lucide) window.lucide.createIcons();
 }
 
 function renderMemberList() {
