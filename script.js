@@ -85,7 +85,7 @@ function ensureAuthenticated() {
     return authPromise;
 }
 
-// Resolve Doc Ref Path
+// Resolve Doc Ref Path - Single Source of Truth
 function getEventDocRef(code) {
     if (!db) return null;
     const cleanCode = code.trim().toUpperCase();
@@ -120,7 +120,7 @@ function hasUnsavedChanges() {
     return false;
 }
 
-// Real-time Firestore Event Fetcher (Optimized to attach snapshot listener immediately)
+// Real-time Firestore Event Fetcher
 async function listenToCloudEvent(code, preFetchedSnap = null) {
     if (eventUnsubscribe) eventUnsubscribe();
 
@@ -216,7 +216,7 @@ function setLoading(loading) {
     if (icon) icon.classList.toggle('hidden', loading);
 }
 
-// Verify Code on Firestore Cloud
+// Verify Code on Firestore Cloud directly at artifacts/{appId}/public/data/events/{cleanCode}
 async function checkEventCodeOnCloud(code) {
     const isAuth = await ensureAuthenticated();
     if (!isAuth || !db) {
@@ -224,21 +224,8 @@ async function checkEventCodeOnCloud(code) {
     }
 
     const cleanCode = code.trim().toUpperCase();
-    
     let docRef = getEventDocRef(cleanCode);
-    let snap = await getDoc(docRef);
-
-    if (snap.exists()) {
-        return snap;
-    }
-
-    const fallbackRef = doc(db, 'events', cleanCode);
-    const fallbackSnap = await getDoc(fallbackRef);
-    if (fallbackSnap.exists()) {
-        return fallbackSnap;
-    }
-
-    return snap;
+    return await getDoc(docRef);
 }
 
 // Form Submission & Event Validation
