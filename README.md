@@ -20,6 +20,7 @@ Major Code Changes:
   - login with Google to open admin platform for background settings...
 
 Minor:
+- Today tag
 - show who free data on each day boxes (with better indicator) (simple)
 - detail view for each day on the matches chart for free members.
 - modify: more unify indicator and design of date boxes
