@@ -29,7 +29,7 @@ https://arthur042l.github.io/EggSpread-time-reserver/
 - Every event have unique sub-pages from the login html (eg. eggspread-time-reserver/#0000) but with same layout
 - random color for profile picture(easier identification
 - ios web app bookmark icon
-- 
+- Hide the api key in private. 
 - Redisgned brand and icon. 
 
 
