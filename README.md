@@ -7,7 +7,7 @@ https://arthur042l.github.io/EggSpread-time-reserver/
 
 ## Task:
 Priority!
-1. Hide the api key in private. 
+1. Hide the api key in private. (updated firebase rules instead)
 
 Major Code Changes:
 - en/chin/genZ/Canton ver language
