@@ -20,9 +20,9 @@ Major Code Changes:
   - login with Google to open admin platform for background settings...
 
 Minor:
-- Today tag
+- V Today tag
 - show who free data on each day boxes
-  - when not enough space, show +[count] counter of extra member except members shown on calendar, show +2 or higher, no +1
+  - when not enough space, show +[count] counter of extra member except members shown on calendar, show +2 or higher, only +1 if no space
   - (with simple indicator, circle user icon with first letter, at most one line) (mobile)
   - (show full name, rounded rectangle, at most two line)(click to show detail view of the day) (desktop)
 - detail view for each day on the matches chart for free members.
