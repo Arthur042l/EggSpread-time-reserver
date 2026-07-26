@@ -662,14 +662,16 @@ function renderCalendar() {
                 `;
             } else {
                 // Desktop: Rounded rectangle badges with full name (Max 2 lines)
-                const maxVisibleDesktop = 3;
-                let visible = freeMembers.slice(0, maxVisibleDesktop);
-                let overflowCount = freeMembers.length - maxVisibleDesktop;
+                // If count >= 4 (no space for 4th member + no +1 rule), collapse 1 member to show +2 or higher counter
+                let visibleCount = freeMembers.length;
+                let overflowCount = 0;
 
-                if (overflowCount === 1) {
-                    visible = freeMembers.slice(0, 4);
-                    overflowCount = 0;
+                if (freeMembers.length >= 4) {
+                    visibleCount = 3;
+                    overflowCount = freeMembers.length - 3; // For 4 members -> 3 visible + (+2)
                 }
+
+                const visible = freeMembers.slice(0, visibleCount);
 
                 avatarBadgesHtml = `
                     <div onclick="window.openDateDetailModal('${dateStr}', event)" class="flex flex-wrap gap-1 mt-1 max-h-[42px] overflow-hidden items-center">
@@ -708,9 +710,9 @@ function renderCalendar() {
             statusIndicator = SVG_ICONS.square;
         }
 
-        // Today Tag
+        // Today Tag: Small Circle Indicator next to/under date number with white text
         const todayTag = isTodayDate 
-            ? `<span class="text-[8px] sm:text-[9px] px-1 py-0.2 rounded font-black uppercase ${isSubmittedResponse && isDraftSelected && !isAllFree ? 'bg-white text-emerald-800' : 'bg-teal-600 text-white'}">Today</span>` 
+            ? `<span class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-teal-500 text-white text-[7px] sm:text-[8px] font-black flex items-center justify-center leading-none shadow-sm" title="Today">•</span>` 
             : '';
 
         dCell.innerHTML = `
