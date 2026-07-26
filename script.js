@@ -34,7 +34,7 @@ try {
     console.warn("Firebase initialization warning:", err);
 }
 
-// Optimized Mobile/Desktop Layout Detection (Prevents vertical address-bar resize thrashing)
+// Optimized Mobile/Desktop Layout Detection
 let isCompactMode = window.innerWidth < 768;
 let lastViewportWidth = window.innerWidth;
 
@@ -47,7 +47,6 @@ function checkDeviceMode() {
 }
 
 window.addEventListener('resize', () => {
-    // Only trigger re-render if horizontal width breakpoint changes
     if (Math.abs(window.innerWidth - lastViewportWidth) > 20) {
         lastViewportWidth = window.innerWidth;
         const wasCompact = isCompactMode;
@@ -85,7 +84,7 @@ function ensureAuthenticated() {
     return authPromise;
 }
 
-// Resolve Doc Ref Path - Single Source of Truth
+// Resolve Doc Ref Path
 function getEventDocRef(code) {
     if (!db) return null;
     const cleanCode = code.trim().toUpperCase();
@@ -98,20 +97,19 @@ let currentSecretCode = null;
 let currentUserName = null;
 let mySelectedDates = new Set(); 
 let submittedDates = new Set();  
-let calCurrentDate = new Date(2026, 7, 1);
+let calCurrentDate = new Date(); // Start with current month
 let eventUnsubscribe = null;
 let isRegisterMode = false;
 
-// Helper: Fast inline SVGs to avoid expensive full DOM icon scanning on mobile
+// Fast inline SVGs
 const SVG_ICONS = {
     checkSquare: `<svg class="w-4 h-4 text-teal-600 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`,
     square: `<svg class="w-4 h-4 text-slate-300 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>`,
     checkSquareGold: `<svg class="w-4 h-4 text-slate-900 font-bold inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`,
-    squareGold: `<svg class="w-4 h-4 text-slate-700 hover:text-slate-900 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>`,
+    squareGold: `<svg class="w-4 h-4 text-slate-700 hover:text-slate-900 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>`,
     checkSaved: `<svg class="w-3 h-3 text-white inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`
 };
 
-// Helper: Check if there are unsaved draft modifications
 function hasUnsavedChanges() {
     if (mySelectedDates.size !== submittedDates.size) return true;
     for (let d of mySelectedDates) {
@@ -165,7 +163,6 @@ function updateUserStateFromActiveData() {
     }
 }
 
-// Sync Event Data to Firestore
 async function syncEventToCloud(code, updatedEventData) {
     activeEventData = updatedEventData;
     renderCurrentPage();
@@ -181,7 +178,6 @@ async function syncEventToCloud(code, updatedEventData) {
     }
 }
 
-// Auth Mode Switcher
 window.setAuthMode = function(mode) {
     isRegisterMode = (mode === 'create');
     
@@ -216,7 +212,6 @@ function setLoading(loading) {
     if (icon) icon.classList.toggle('hidden', loading);
 }
 
-// Verify Code on Firestore Cloud directly at artifacts/{appId}/public/data/events/{cleanCode}
 async function checkEventCodeOnCloud(code) {
     const isAuth = await ensureAuthenticated();
     if (!isAuth || !db) {
@@ -228,7 +223,6 @@ async function checkEventCodeOnCloud(code) {
     return await getDoc(docRef);
 }
 
-// Form Submission & Event Validation
 window.handleLoginSubmit = async function(e) {
     if (e && e.preventDefault) e.preventDefault();
     
@@ -262,9 +256,9 @@ window.handleLoginSubmit = async function(e) {
     if (cloudError) {
         setLoading(false);
         if (cloudError.message === "MISSING_CONFIG" || !db) {
-            window.showToast("No Firebase Config Detected! Please contact @arthur_le.e for help.");
+            window.showToast("No Firebase Config Detected! Please contact site admin for help.");
         } else {
-            window.showToast("Failed to connect to Cloud Storage, Please check your internet connection or Firebase permission.");
+            window.showToast("Failed to connect to Cloud Storage. Please check internet connection.");
         }
         return false;
     }
@@ -280,7 +274,7 @@ window.handleLoginSubmit = async function(e) {
     } else {
         if (eventExistsOnCloud) {
             setLoading(false);
-            window.showToast(`Event Code "${currentSecretCode}" has existed in Cloud Storage, Please "Join Event" instead.`);
+            window.showToast(`Event Code "${currentSecretCode}" already exists on Cloud. Please "Join Event" instead.`);
             window.setAuthMode('join');
             return false;
         } else {
@@ -392,7 +386,8 @@ window.resetCalToToday = function() {
     renderCalendar();
 };
 
-window.toggleDateSelection = function(dateStr) {
+window.toggleDateSelection = function(dateStr, e = null) {
+    if (e) e.stopPropagation();
     if (mySelectedDates.has(dateStr)) {
         mySelectedDates.delete(dateStr);
     } else {
@@ -417,7 +412,7 @@ window.submitFreeDays = async function() {
     submittedDates = new Set(mySelectedDates);
     await syncEventToCloud(currentSecretCode, updatedEvent);
 
-    window.showToast("Your Free Days has been stored and submitted! 🎉");
+    window.showToast("Your Free Days have been saved and submitted! 🎉");
     checkAndTriggerConfetti();
 };
 
@@ -458,7 +453,7 @@ function renderLeaderboard(containerId) {
     container.innerHTML = '';
 
     if (sortedDates.length === 0) {
-        container.innerHTML = `<div class="text-xs text-slate-400 italic py-4 text-center">尚無成員提交日期。</div>`;
+        container.innerHTML = `<div class="text-xs text-slate-400 italic py-4 text-center">No submissions yet.</div>`;
         return;
     }
 
@@ -467,9 +462,11 @@ function renderLeaderboard(containerId) {
         const percent = Math.min(100, Math.round((count / eventObj.groupSize) * 100));
 
         const item = document.createElement('div');
-        item.className = `p-2.5 sm:p-3 rounded-2xl border flex items-center justify-between transition-all ${
+        item.className = `p-2.5 sm:p-3 rounded-2xl border flex items-center justify-between transition-all cursor-pointer hover:border-teal-400 ${
             isAllFree ? 'bg-amber-50 border-amber-300 shadow-sm' : 'bg-slate-50 border-slate-200'
         }`;
+
+        item.onclick = () => window.openDateDetailModal(dateStr);
 
         item.innerHTML = `
             <div>
@@ -481,9 +478,12 @@ function renderLeaderboard(containerId) {
                     <div class="bg-teal-500 h-full rounded-full" style="width: ${percent}%"></div>
                 </div>
             </div>
-            <div class="text-right">
-                <span class="text-xs sm:text-sm font-black text-slate-800">${count}</span>
-                <span class="text-[11px] text-slate-500">/ ${eventObj.groupSize} Free</span>
+            <div class="text-right flex items-center gap-2">
+                <div>
+                    <span class="text-xs sm:text-sm font-black text-slate-800">${count}</span>
+                    <span class="text-[11px] text-slate-500">/ ${eventObj.groupSize} Free</span>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 hidden sm:block"></i>
             </div>
         `;
         container.appendChild(item);
@@ -506,6 +506,60 @@ function updateSaveButtonState() {
     }
 }
 
+// Open Date Detail Modal on Desktop
+window.openDateDetailModal = function(dateStr, event = null) {
+    if (event) event.stopPropagation();
+    if (isCompactMode) return; // Desktop feature only
+
+    const modal = document.getElementById('date-detail-modal');
+    if (!modal || !activeEventData) return;
+
+    const freeMembers = [];
+    Object.entries(activeEventData.responses || {}).forEach(([mName, mDates]) => {
+        if (mDates.includes(dateStr)) freeMembers.push(mName);
+    });
+
+    document.getElementById('modal-date-title').innerText = dateStr;
+    document.getElementById('modal-free-count').innerText = `${freeMembers.length} / ${activeEventData.groupSize || 1} members free`;
+
+    const membersContainer = document.getElementById('modal-members-list');
+    membersContainer.innerHTML = '';
+
+    if (freeMembers.length === 0) {
+        membersContainer.innerHTML = `<p class="text-xs text-slate-400 italic py-3 text-center">No members available on this day.</p>`;
+    } else {
+        freeMembers.forEach(m => {
+            const pill = document.createElement('div');
+            pill.className = "flex items-center gap-2 p-2 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold text-slate-800";
+            pill.innerHTML = `
+                <div class="w-6 h-6 rounded-full bg-teal-600 text-white text-[10px] font-black flex items-center justify-center">
+                    ${m.charAt(0).toUpperCase()}
+                </div>
+                <span>${m} ${m === currentUserName ? '(You)' : ''}</span>
+            `;
+            membersContainer.appendChild(pill);
+        });
+    }
+
+    const toggleBtn = document.getElementById('modal-toggle-free-btn');
+    const isSelected = mySelectedDates.has(dateStr);
+    toggleBtn.innerText = isSelected ? "Remove My Free Day" : "Mark Myself Free";
+    toggleBtn.className = isSelected 
+        ? "w-full py-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 font-bold text-xs rounded-xl transition-all"
+        : "w-full py-2 bg-teal-600 text-white hover:bg-teal-700 font-bold text-xs rounded-xl shadow transition-all";
+    toggleBtn.onclick = () => {
+        window.toggleDateSelection(dateStr);
+        window.openDateDetailModal(dateStr);
+    };
+
+    modal.classList.remove('hidden');
+};
+
+window.closeDateDetailModal = function() {
+    const modal = document.getElementById('date-detail-modal');
+    if (modal) modal.classList.add('hidden');
+};
+
 function renderCalendar() {
     if (!currentSecretCode || !activeEventData) return;
 
@@ -522,6 +576,9 @@ function renderCalendar() {
 
     const daysGrid = document.getElementById('calendar-days-grid');
     daysGrid.innerHTML = '';
+
+    const todayObj = new Date();
+    const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
 
     const year = calCurrentDate.getFullYear();
     const month = calCurrentDate.getMonth();
@@ -542,7 +599,8 @@ function renderCalendar() {
 
     for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        
+        const isTodayDate = (dateStr === todayStr);
+
         const freeMembers = [];
         Object.entries(eventObj.responses || {}).forEach(([mName, mDates]) => {
             if (mDates.includes(dateStr)) freeMembers.push(mName);
@@ -555,7 +613,7 @@ function renderCalendar() {
         if (isAllFree) allFreeDatesCount++;
 
         const dCell = document.createElement('div');
-        dCell.onclick = () => window.toggleDateSelection(dateStr);
+        dCell.onclick = (e) => window.toggleDateSelection(dateStr, e);
 
         let cardBgClass = "bg-white hover:bg-teal-50/50 border-slate-200/80";
 
@@ -570,12 +628,23 @@ function renderCalendar() {
         const cellPaddingClass = isCompactMode ? 'p-1 rounded-xl' : 'p-2 rounded-2xl';
         dCell.className = `aspect-square ${cellPaddingClass} flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden ${cardBgClass}`;
 
+        // Member Avatar Badges & +[Count] Overflow logic
         let avatarBadgesHtml = '';
         if (freeMembers.length > 0) {
             if (isCompactMode) {
+                // Mobile: Circular initial badges (1 line limit)
+                const maxVisibleMobile = 3;
+                let visible = freeMembers.slice(0, maxVisibleMobile);
+                let overflowCount = freeMembers.length - maxVisibleMobile;
+
+                if (overflowCount === 1) {
+                    visible = freeMembers.slice(0, 4);
+                    overflowCount = 0;
+                }
+
                 avatarBadgesHtml = `
-                    <div class="flex flex-wrap gap-0.5 mt-0.5 max-h-[22px] overflow-hidden">
-                        ${freeMembers.map(m => `
+                    <div class="flex flex-wrap gap-0.5 mt-0.5 max-h-[22px] overflow-hidden items-center">
+                        ${visible.map(m => `
                             <span class="text-[9px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold ${
                                 isAllFree 
                                     ? 'bg-slate-900 text-amber-300' 
@@ -584,12 +653,27 @@ function renderCalendar() {
                                 ${m.charAt(0).toUpperCase()}
                             </span>
                         `).join('')}
+                        ${overflowCount >= 2 ? `
+                            <span class="text-[8px] px-1 h-3.5 rounded-full bg-slate-800 text-white font-black flex items-center justify-center">
+                                +${overflowCount}
+                            </span>
+                        ` : ''}
                     </div>
                 `;
             } else {
+                // Desktop: Rounded rectangle badges with full name (Max 2 lines)
+                const maxVisibleDesktop = 3;
+                let visible = freeMembers.slice(0, maxVisibleDesktop);
+                let overflowCount = freeMembers.length - maxVisibleDesktop;
+
+                if (overflowCount === 1) {
+                    visible = freeMembers.slice(0, 4);
+                    overflowCount = 0;
+                }
+
                 avatarBadgesHtml = `
-                    <div class="flex flex-wrap gap-1 mt-1 max-h-[42px] overflow-hidden">
-                        ${freeMembers.map(m => `
+                    <div onclick="window.openDateDetailModal('${dateStr}', event)" class="flex flex-wrap gap-1 mt-1 max-h-[42px] overflow-hidden items-center">
+                        ${visible.map(m => `
                             <span class="text-[10px] px-1.5 py-0.5 rounded-md font-bold truncate max-w-[55px] ${
                                 isAllFree 
                                     ? 'bg-slate-900/90 text-amber-300' 
@@ -600,12 +684,17 @@ function renderCalendar() {
                                 ${m}
                             </span>
                         `).join('')}
+                        ${overflowCount >= 2 ? `
+                            <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-900 text-teal-300 font-extrabold shadow-sm">
+                                +${overflowCount}
+                            </span>
+                        ` : ''}
                     </div>
                 `;
             }
         }
 
-        // Indicator Icon Logic: Uses fast inline SVGs instead of scanning entire DOM on mobile
+        // Indicator Icon Logic
         let statusIndicator = '';
         if (isAllFree) {
             statusIndicator = isDraftSelected ? SVG_ICONS.checkSquareGold : SVG_ICONS.squareGold;
@@ -619,9 +708,17 @@ function renderCalendar() {
             statusIndicator = SVG_ICONS.square;
         }
 
+        // Today Tag
+        const todayTag = isTodayDate 
+            ? `<span class="text-[8px] sm:text-[9px] px-1 py-0.2 rounded font-black uppercase ${isSubmittedResponse && isDraftSelected && !isAllFree ? 'bg-white text-emerald-800' : 'bg-teal-600 text-white'}">Today</span>` 
+            : '';
+
         dCell.innerHTML = `
             <div class="flex items-center justify-between w-full">
-                <span class="text-xs sm:text-sm font-bold ${isSubmittedResponse && isDraftSelected && !isAllFree ? 'text-white' : 'text-slate-800'}">${day}</span>
+                <div class="flex items-center gap-1">
+                    <span class="text-xs sm:text-sm font-bold ${isSubmittedResponse && isDraftSelected && !isAllFree ? 'text-white' : 'text-slate-800'}">${day}</span>
+                    ${todayTag}
+                </div>
                 ${statusIndicator}
             </div>
             ${avatarBadgesHtml}
