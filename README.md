@@ -21,8 +21,12 @@ Major Code Changes:
 
 Minor:
 - Today tag
-- show who free data on each day boxes (with better indicator) (simple)
+- show who free data on each day boxes
+  - when not enough space, show +[count] counter of extra member except members shown on calendar, show +2 or higher, no +1
+  - (with simple indicator, circle user icon with first letter, at most one line) (mobile)
+  - (show full name, rounded rectangle, at most two line)(click to show detail view of the day) (desktop)
 - detail view for each day on the matches chart for free members.
+  - (only desktop) show the detail view on click on the users icon/indicator.
 - modify: more unify indicator and design of date boxes
 - All free depend on joined in and expect no. of member
 - random color for profile picture(easier identification
@@ -37,7 +41,9 @@ Unclassify:
   - V No. of member of expected respond
   - V Code settings
   - V Event name
+  - copy link
   - ? admin dashboard
+    - delete event
 
 ### Done Task
 - V Login Page( secret code pairing for each event )
