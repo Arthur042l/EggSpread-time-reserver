@@ -637,13 +637,23 @@ function renderCalendar() {
         let avatarBadgesHtml = '';
         if (freeMembers.length > 0) {
             if (isCompactMode) {
-                // Mobile: At most 1 member avatar shown, overflow displays as a capsule (+N) in the bottom-right corner
+                // Mobile: 1 member avatar + inline +N count capsule on the SAME LINE with padding
                 const maxVisibleMobile = 1;
                 const visible = freeMembers.slice(0, maxVisibleMobile);
                 const overflowCount = freeMembers.length - maxVisibleMobile;
 
+                // Color themes matching day status
+                let counterThemeClass = "bg-slate-200 text-slate-700 font-bold";
+                if (isAllFree) {
+                    counterThemeClass = "bg-amber-400 text-slate-900 font-extrabold";
+                } else if (isSubmittedResponse && isDraftSelected) {
+                    counterThemeClass = "bg-emerald-800 text-emerald-100 font-extrabold";
+                } else if (isDraftSelected) {
+                    counterThemeClass = "bg-teal-700 text-white font-extrabold";
+                }
+
                 avatarBadgesHtml = `
-                    <div class="flex items-center gap-0.5 mt-0.5 max-h-[18px] w-full overflow-hidden">
+                    <div class="flex items-center gap-1 mt-1 max-h-[20px] w-full overflow-hidden">
                         ${visible.map(m => `
                             <span class="text-[8px] w-3.5 h-3.5 rounded-full flex-shrink-0 flex items-center justify-center font-bold ${
                                 isAllFree 
@@ -653,12 +663,12 @@ function renderCalendar() {
                                 ${m.charAt(0).toUpperCase()}
                             </span>
                         `).join('')}
+                        ${overflowCount >= 1 ? `
+                            <span class="text-[8px] px-1.5 py-0.2 rounded-full flex-shrink-0 flex items-center justify-center shadow-sm ${counterThemeClass}">
+                                +${overflowCount}
+                            </span>
+                        ` : ''}
                     </div>
-                    ${overflowCount >= 1 ? `
-                        <span class="absolute bottom-0.5 right-0.5 text-[7px] px-1.5 py-0.2 rounded-full bg-slate-900/90 text-amber-300 font-black flex items-center justify-center shadow-sm">
-                            +${overflowCount}
-                        </span>
-                    ` : ''}
                 `;
             } else {
                 // Desktop: Rounded rectangle badges with full name
