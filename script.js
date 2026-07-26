@@ -9,7 +9,7 @@ let db = null;
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-// 💡 如果在 GitHub Pages 上運行，請在此處填入你從 Firebase Console 取得的專案設定：
+// Default Firebase Configuration
 const defaultFirebaseConfig = {
     apiKey: "AIzaSyDm0L6F6CGmrbsESTMLhOek74a5ttySP04",
     authDomain: "eggspread-time-reserver.firebaseapp.com",
@@ -97,7 +97,7 @@ let currentSecretCode = null;
 let currentUserName = null;
 let mySelectedDates = new Set(); 
 let submittedDates = new Set();  
-let calCurrentDate = new Date(); // Start with current month
+let calCurrentDate = new Date();
 let eventUnsubscribe = null;
 let isRegisterMode = false;
 
@@ -107,7 +107,9 @@ const SVG_ICONS = {
     square: `<svg class="w-4 h-4 text-slate-300 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>`,
     checkSquareGold: `<svg class="w-4 h-4 text-slate-900 font-bold inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`,
     squareGold: `<svg class="w-4 h-4 text-slate-700 hover:text-slate-900 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>`,
-    checkSaved: `<svg class="w-3 h-3 text-white inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+    checkSaved: `<svg class="w-3 h-3 text-white inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
+    arrowRight: `<svg class="w-4 h-4 text-slate-400 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`,
+    detailIcon: `<svg class="w-3.5 h-3.5 text-slate-400 hover:text-teal-600 transition-colors inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>`
 };
 
 function hasUnsavedChanges() {
@@ -483,7 +485,7 @@ function renderLeaderboard(containerId) {
                     <span class="text-xs sm:text-sm font-black text-slate-800">${count}</span>
                     <span class="text-[11px] text-slate-500">/ ${eventObj.groupSize} Free</span>
                 </div>
-                <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 hidden sm:block"></i>
+                ${SVG_ICONS.arrowRight}
             </div>
         `;
         container.appendChild(item);
@@ -506,10 +508,10 @@ function updateSaveButtonState() {
     }
 }
 
-// Open Date Detail Modal on Desktop
+// Open Date Detail Modal on Desktop with auto-save for user's own response
 window.openDateDetailModal = function(dateStr, event = null) {
     if (event) event.stopPropagation();
-    if (isCompactMode) return; // Desktop feature only
+    if (isCompactMode) return;
 
     const modal = document.getElementById('date-detail-modal');
     if (!modal || !activeEventData) return;
@@ -547,8 +549,11 @@ window.openDateDetailModal = function(dateStr, event = null) {
     toggleBtn.className = isSelected 
         ? "w-full py-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 font-bold text-xs rounded-xl transition-all"
         : "w-full py-2 bg-teal-600 text-white hover:bg-teal-700 font-bold text-xs rounded-xl shadow transition-all";
-    toggleBtn.onclick = () => {
+
+    // Auto-save user's response on click
+    toggleBtn.onclick = async () => {
         window.toggleDateSelection(dateStr);
+        await window.submitFreeDays(); // Automatically save user's response for the day
         window.openDateDetailModal(dateStr);
     };
 
@@ -661,14 +666,14 @@ function renderCalendar() {
                     </div>
                 `;
             } else {
-                // Desktop: Rounded rectangle badges with full name (Max 2 lines)
-                // If count >= 4 (no space for 4th member + no +1 rule), collapse 1 member to show +2 or higher counter
+                // Desktop: Rounded rectangle badges with full name
+                // If there are 4 members, show 2 visible + (+2) counter badge as requested
                 let visibleCount = freeMembers.length;
                 let overflowCount = 0;
 
                 if (freeMembers.length >= 4) {
-                    visibleCount = 3;
-                    overflowCount = freeMembers.length - 3; // For 4 members -> 3 visible + (+2)
+                    visibleCount = 2;
+                    overflowCount = freeMembers.length - 2; // For 4 members -> 2 visible + +2
                 }
 
                 const visible = freeMembers.slice(0, visibleCount);
@@ -710,20 +715,25 @@ function renderCalendar() {
             statusIndicator = SVG_ICONS.square;
         }
 
-        // Today Tag: Small Circle Indicator next to/under date number with white text
-        const todayTag = isTodayDate 
-            ? `<span class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-teal-500 text-white text-[7px] sm:text-[8px] font-black flex items-center justify-center leading-none shadow-sm" title="Today">•</span>` 
+        // Today Tag: Rounded circle badge over date with white text (Image P1 style)
+        const dateDisplayHtml = isTodayDate 
+            ? `<span class="w-5 h-5 rounded-full bg-emerald-500 text-white font-extrabold text-xs flex items-center justify-center shadow-sm">${day}</span>`
+            : `<span class="text-xs sm:text-sm font-bold ${isSubmittedResponse && isDraftSelected && !isAllFree ? 'text-white' : 'text-slate-800'}">${day}</span>`;
+
+        // Desktop bottom right detail view indicator arrow
+        const detailIndicatorHtml = !isCompactMode 
+            ? `<div onclick="window.openDateDetailModal('${dateStr}', event)" class="absolute bottom-1 right-1 opacity-40 hover:opacity-100">${SVG_ICONS.detailIcon}</div>`
             : '';
 
         dCell.innerHTML = `
             <div class="flex items-center justify-between w-full">
                 <div class="flex items-center gap-1">
-                    <span class="text-xs sm:text-sm font-bold ${isSubmittedResponse && isDraftSelected && !isAllFree ? 'text-white' : 'text-slate-800'}">${day}</span>
-                    ${todayTag}
+                    ${dateDisplayHtml}
                 </div>
                 ${statusIndicator}
             </div>
             ${avatarBadgesHtml}
+            ${detailIndicatorHtml}
         `;
 
         daysGrid.appendChild(dCell);
