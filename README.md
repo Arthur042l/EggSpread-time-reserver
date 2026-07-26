@@ -7,7 +7,7 @@ https://arthur042l.github.io/EggSpread-time-reserver/
 
 ## Task:
 Priority!
-1. Hide the api key in private. (updated firebase rules instead)
+1. V Hide the api key in private. (updated firebase rules instead)
 
 Major Code Changes:
 - en/chin/genZ/Canton ver language
@@ -20,13 +20,6 @@ Major Code Changes:
   - login with Google to open admin platform for background settings...
 
 Minor:
-- V Today tag
-- show who free data on each day boxes
-  - V when not enough space, show +[count] counter of extra member except members shown on calendar, show +2 or higher, only +1 if no space
-  -   (with simple indicator, circle user icon with first letter, at most one line) (mobile)
-  - V (show full name, rounded rectangle, at most two line)(click to show detail view of the day) (desktop)
-- detail view for each day on the matches chart for free members. 
-  - V (only desktop) show the detail view on click on the users icon/indicator.
 - modify: more unify indicator and design of date boxes
 - All free depend on joined in and expect no. of member
 - random color for profile picture(easier identification
@@ -52,6 +45,13 @@ Unclassify:
 - V date picker for free days
 - V save respond button
 - V Data management.
+- V Today tag
+- V show who free data on each day boxes
+  - V when not enough space, show +[count] counter of extra member except members shown on calendar, show +2 or higher, only +1 if no space
+  - V (with simple indicator, circle user icon with first letter, at most one line) (mobile)
+  - V (show full name, rounded rectangle, at most two line)(click to show detail view of the day) (desktop)
+- V detail view for each day on the matches chart for free members. 
+  - V (only desktop) show the detail view on click on the users icon/indicator.
 - V sepcial presentation for all people free
 - V compact mode for phone
 - V wide mode for computer tablet
