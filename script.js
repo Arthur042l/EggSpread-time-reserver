@@ -642,11 +642,6 @@ function renderCalendar() {
                 let visible = freeMembers.slice(0, maxVisibleMobile);
                 let overflowCount = freeMembers.length - maxVisibleMobile;
 
-                if (overflowCount === 1) {
-                    visible = freeMembers.slice(0, 4);
-                    overflowCount = 0;
-                }
-
                 avatarBadgesHtml = `
                     <div class="flex flex-wrap gap-0.5 mt-0.5 max-h-[22px] overflow-hidden items-center">
                         ${visible.map(m => `
@@ -658,7 +653,7 @@ function renderCalendar() {
                                 ${m.charAt(0).toUpperCase()}
                             </span>
                         `).join('')}
-                        ${overflowCount >= 2 ? `
+                        ${overflowCount >= 1 ? `
                             <span class="text-[8px] px-1 h-3.5 rounded-full bg-slate-800 text-white font-black flex items-center justify-center">
                                 +${overflowCount}
                             </span>
@@ -667,13 +662,13 @@ function renderCalendar() {
                 `;
             } else {
                 // Desktop: Rounded rectangle badges with full name
-                // If there are 4 members, show 2 visible + (+2) counter badge as requested
+                // Displays up to 2 badges, showing +N for any overflow (including +1 when 3 members exist)
                 let visibleCount = freeMembers.length;
                 let overflowCount = 0;
 
-                if (freeMembers.length >= 4) {
+                if (freeMembers.length > 2) {
                     visibleCount = 2;
-                    overflowCount = freeMembers.length - 2; // For 4 members -> 2 visible + +2
+                    overflowCount = freeMembers.length - 2; // e.g., 3 members -> 2 visible + (+1)
                 }
 
                 const visible = freeMembers.slice(0, visibleCount);
@@ -691,7 +686,7 @@ function renderCalendar() {
                                 ${m}
                             </span>
                         `).join('')}
-                        ${overflowCount >= 2 ? `
+                        ${overflowCount >= 1 ? `
                             <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-900 text-teal-300 font-extrabold shadow-sm">
                                 +${overflowCount}
                             </span>
@@ -715,7 +710,7 @@ function renderCalendar() {
             statusIndicator = SVG_ICONS.square;
         }
 
-        // Today Tag: Rounded circle badge over date with white text (Image P1 style)
+        // Today Tag: Rounded circle badge over date with white text
         const dateDisplayHtml = isTodayDate 
             ? `<span class="w-5 h-5 rounded-full bg-emerald-500 text-white font-extrabold text-xs flex items-center justify-center shadow-sm">${day}</span>`
             : `<span class="text-xs sm:text-sm font-bold ${isSubmittedResponse && isDraftSelected && !isAllFree ? 'text-white' : 'text-slate-800'}">${day}</span>`;
