@@ -468,7 +468,8 @@ function renderLeaderboard(containerId) {
             isAllFree ? 'bg-amber-50 border-amber-300 shadow-sm' : 'bg-slate-50 border-slate-200'
         }`;
 
-        item.onclick = () => window.openDateDetailModal(dateStr);
+        // Opens detail modal on both Desktop and Mobile
+        item.onclick = (e) => window.openDateDetailModal(dateStr, e);
 
         item.innerHTML = `
             <div>
@@ -508,10 +509,9 @@ function updateSaveButtonState() {
     }
 }
 
-// Open Date Detail Modal on Desktop with auto-save for user's own response
+// Open Date Detail Modal (Works across Desktop and Mobile)
 window.openDateDetailModal = function(dateStr, event = null) {
     if (event) event.stopPropagation();
-    if (isCompactMode) return;
 
     const modal = document.getElementById('date-detail-modal');
     if (!modal || !activeEventData) return;
@@ -637,15 +637,20 @@ function renderCalendar() {
         let avatarBadgesHtml = '';
         if (freeMembers.length > 0) {
             if (isCompactMode) {
-                // Mobile: Circular initial badges (1 line limit)
-                const maxVisibleMobile = 3;
+                // Mobile: Circular initial badges constrained strictly to 1 line, showing +N in the bottom right corner
+                const maxVisibleMobile = 2; // Show at most 2 circle icons on 1 line
                 let visible = freeMembers.slice(0, maxVisibleMobile);
                 let overflowCount = freeMembers.length - maxVisibleMobile;
 
+                if (freeMembers.length === 3) {
+                    visible = freeMembers.slice(0, 2);
+                    overflowCount = 1;
+                }
+
                 avatarBadgesHtml = `
-                    <div class="flex flex-wrap gap-0.5 mt-0.5 max-h-[22px] overflow-hidden items-center">
+                    <div class="flex items-center gap-0.5 mt-0.5 max-h-[18px] w-full overflow-hidden">
                         ${visible.map(m => `
-                            <span class="text-[9px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold ${
+                            <span class="text-[8px] w-3.5 h-3.5 rounded-full flex-shrink-0 flex items-center justify-center font-bold ${
                                 isAllFree 
                                     ? 'bg-slate-900 text-amber-300' 
                                     : (m === currentUserName ? 'bg-emerald-800 text-white' : 'bg-slate-200 text-slate-700')
@@ -653,22 +658,21 @@ function renderCalendar() {
                                 ${m.charAt(0).toUpperCase()}
                             </span>
                         `).join('')}
-                        ${overflowCount >= 1 ? `
-                            <span class="text-[8px] px-1 h-3.5 rounded-full bg-slate-800 text-white font-black flex items-center justify-center">
-                                +${overflowCount}
-                            </span>
-                        ` : ''}
                     </div>
+                    ${overflowCount >= 1 ? `
+                        <span class="absolute bottom-0.5 right-0.5 text-[7px] px-1 h-3 rounded-md bg-slate-900/90 text-amber-300 font-black flex items-center justify-center shadow-sm">
+                            +${overflowCount}
+                        </span>
+                    ` : ''}
                 `;
             } else {
                 // Desktop: Rounded rectangle badges with full name
-                // Displays up to 2 badges, showing +N for any overflow (including +1 when 3 members exist)
                 let visibleCount = freeMembers.length;
                 let overflowCount = 0;
 
                 if (freeMembers.length > 2) {
                     visibleCount = 2;
-                    overflowCount = freeMembers.length - 2; // e.g., 3 members -> 2 visible + (+1)
+                    overflowCount = freeMembers.length - 2;
                 }
 
                 const visible = freeMembers.slice(0, visibleCount);
@@ -716,7 +720,7 @@ function renderCalendar() {
             : `<span class="text-xs sm:text-sm font-bold ${isSubmittedResponse && isDraftSelected && !isAllFree ? 'text-white' : 'text-slate-800'}">${day}</span>`;
 
         // Desktop bottom right detail view indicator arrow
-        const detailIndicatorHtml = !isCompactMode 
+        const detailIndicatorHtml = (!isCompactMode && freeMembers.length > 0)
             ? `<div onclick="window.openDateDetailModal('${dateStr}', event)" class="absolute bottom-1 right-1 opacity-40 hover:opacity-100">${SVG_ICONS.detailIcon}</div>`
             : '';
 
