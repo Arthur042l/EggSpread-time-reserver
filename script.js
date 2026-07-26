@@ -103,13 +103,13 @@ let isRegisterMode = false;
 
 // Fast inline SVGs
 const SVG_ICONS = {
-    checkSquare: `<svg class="w-4 h-4 text-teal-600 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`,
-    square: `<svg class="w-4 h-4 text-slate-300 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>`,
-    checkSquareGold: `<svg class="w-4 h-4 text-slate-900 font-bold inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`,
-    squareGold: `<svg class="w-4 h-4 text-slate-700 hover:text-slate-900 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>`,
-    checkSaved: `<svg class="w-3 h-3 text-white inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
-    arrowRight: `<svg class="w-4 h-4 text-slate-400 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`,
-    detailIcon: `<svg class="w-3.5 h-3.5 text-slate-400 hover:text-teal-600 transition-colors inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>`
+    checkSquare: `<svg class="w-4 h-4 text-teal-600 inline-block pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`,
+    square: `<svg class="w-4 h-4 text-slate-300 inline-block pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>`,
+    checkSquareGold: `<svg class="w-4 h-4 text-slate-900 font-bold inline-block pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`,
+    squareGold: `<svg class="w-4 h-4 text-slate-700 hover:text-slate-900 inline-block pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>`,
+    checkSaved: `<svg class="w-3 h-3 text-white inline-block pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
+    arrowRight: `<svg class="w-4 h-4 text-slate-400 inline-block pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`,
+    detailIcon: `<svg class="w-3.5 h-3.5 text-slate-400 hover:text-teal-600 transition-colors inline-block pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>`
 };
 
 function hasUnsavedChanges() {
@@ -633,19 +633,14 @@ function renderCalendar() {
         const cellPaddingClass = isCompactMode ? 'p-1 rounded-xl' : 'p-2 rounded-2xl';
         dCell.className = `aspect-square ${cellPaddingClass} flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden ${cardBgClass}`;
 
-        // Member Avatar Badges & +[Count] Overflow logic
+        // Member Avatar Badges & +[Count] Capsule Overflow logic
         let avatarBadgesHtml = '';
         if (freeMembers.length > 0) {
             if (isCompactMode) {
-                // Mobile: Circular initial badges constrained strictly to 1 line, showing +N in the bottom right corner
-                const maxVisibleMobile = 2; // Show at most 2 circle icons on 1 line
-                let visible = freeMembers.slice(0, maxVisibleMobile);
-                let overflowCount = freeMembers.length - maxVisibleMobile;
-
-                if (freeMembers.length === 3) {
-                    visible = freeMembers.slice(0, 2);
-                    overflowCount = 1;
-                }
+                // Mobile: At most 1 member avatar shown, overflow displays as a capsule (+N) in the bottom-right corner
+                const maxVisibleMobile = 1;
+                const visible = freeMembers.slice(0, maxVisibleMobile);
+                const overflowCount = freeMembers.length - maxVisibleMobile;
 
                 avatarBadgesHtml = `
                     <div class="flex items-center gap-0.5 mt-0.5 max-h-[18px] w-full overflow-hidden">
@@ -660,7 +655,7 @@ function renderCalendar() {
                         `).join('')}
                     </div>
                     ${overflowCount >= 1 ? `
-                        <span class="absolute bottom-0.5 right-0.5 text-[7px] px-1 h-3 rounded-md bg-slate-900/90 text-amber-300 font-black flex items-center justify-center shadow-sm">
+                        <span class="absolute bottom-0.5 right-0.5 text-[7px] px-1.5 py-0.2 rounded-full bg-slate-900/90 text-amber-300 font-black flex items-center justify-center shadow-sm">
                             +${overflowCount}
                         </span>
                     ` : ''}
