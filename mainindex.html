@@ -291,8 +291,8 @@
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-20 right-6 px-4 py-3 bg-slate-900 text-white text-xs font-semibold rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-2 transition-all transform translate-y-16 opacity-0 z-50">
+    <!-- Toast Notification (Positioned safely above floating info button without blocking touch events) -->
+    <div id="toast" class="fixed bottom-24 right-6 px-4 py-3 bg-slate-900 text-white text-xs font-semibold rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-2 transition-all transform translate-y-16 opacity-0 pointer-events-none z-50">
         <i data-lucide="info" id="toast-icon" class="w-4 h-4 text-teal-400"></i>
         <span id="toast-msg">Notification Message</span>
     </div>
