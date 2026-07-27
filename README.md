@@ -7,7 +7,7 @@ https://arthur042l.github.io/EggSpread-time-reserver/
 
 ## Task:
 Priority!
-1. V Hide the api key in private. (updated firebase rules instead)
+1. 
 
 Major Code Changes:
 - en/chin/genZ/Canton ver language
@@ -39,6 +39,7 @@ Unclassify:
     - delete event
 
 ### Done Task
+1. !V Hide the api key in private. (updated firebase rules instead)
 - V Login Page( secret code pairing for each event )
   - V only login foe existing, need register.
 - V remember me ! ( name fill in )
