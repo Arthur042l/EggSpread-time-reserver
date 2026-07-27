@@ -4,23 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DateMatch - Friend Group Free Date Finder</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Canvas Confetti -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <!-- Custom Style -->
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="tabicon.png">
     <link rel="apple-touch-icon" type="image/png" href="tabicon.png">
 </head>
 <body class="bg-custom-gradient min-h-screen text-slate-800 font-sans antialiased pb-12 transition-all">
 
-    <!-- Top Navbar (Always Visible across all views) -->
     <header id="main-header" class="w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-700/60 sticky top-0 z-50 text-white">
         <div class="max-w-7xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-2">
-            <!-- Brand Logo & Name (DateMatch) -->
             <div class="flex items-center space-x-2 sm:space-x-3 cursor-pointer" onclick="navigate('calendar')">
                 <div class="p-1.5 sm:p-2 bg-gradient-to-tr from-teal-400 to-emerald-400 text-slate-900 rounded-xl shadow font-bold">
                     <i data-lucide="users" class="w-4 h-4 sm:w-5 sm:h-5"></i>
@@ -32,14 +26,12 @@
             </div>
 
             <div id="nav-actions" class="flex items-center space-x-1.5 sm:space-x-3">
-                <!-- Navigation Tabs (Hidden on Login page) -->
                 <nav id="main-nav-tabs" class="flex bg-slate-800/80 p-0.5 sm:p-1 rounded-xl border border-slate-700/50 text-[11px] sm:text-xs font-semibold">
                     <button id="tab-calendar" onclick="navigate('calendar')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-teal-400 bg-slate-700 shadow"><i data-lucide="calendar" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> Calendar</span></button>
                     <button id="tab-list" onclick="navigate('list')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-300 hover:text-white"><i data-lucide="list" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> Members</span></button>
                     <button id="tab-admin" onclick="navigate('admin')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-300 hover:text-white"><i data-lucide="settings" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> Settings</span></button>
                 </nav>
 
-                <!-- User Profile & Logout Pill (Hidden on Login page) -->
                 <div id="user-info-pill" class="hidden items-center gap-1.5 bg-slate-800 border border-slate-700 px-2 sm:px-3 py-1 rounded-xl">
                     <div id="user-avatar-initial" class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-teal-500 text-slate-900 font-bold text-xs flex items-center justify-center">?</div>
                     <span id="user-name-display" class="text-xs font-semibold text-slate-200 hidden lg:inline">User</span>
@@ -51,7 +43,6 @@
 
     <main class="max-w-7xl mx-auto px-3 sm:px-4 pt-4 sm:pt-6">
 
-        <!-- LOGIN / REGISTER EVENT PAGE -->
         <section id="page-login" class="max-w-md mx-auto my-6 sm:my-12 bg-white/95 backdrop-blur-xl p-6 sm:p-8 rounded-3xl shadow-2xl border border-white/40">
             <div class="text-center mb-6">
                 <div class="inline-flex p-3 bg-teal-500/10 text-teal-600 rounded-2xl mb-2 sm:mb-3"><i data-lucide="calendar-heart" class="w-7 h-7 sm:w-8 sm:h-8"></i></div>
@@ -59,20 +50,17 @@
                 <p id="login-subtitle-desc" class="text-xs text-slate-500 mt-1">Join an existing event or create a new one</p>
             </div>
 
-            <!-- Join vs Create Event Toggle Bar -->
             <div class="bg-slate-100 p-1 rounded-xl flex mb-5 border border-slate-200">
                 <button type="button" id="auth-tab-join" onclick="setAuthMode('join')" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-white text-teal-700 shadow transition-all">Join Event</button>
                 <button type="button" id="auth-tab-create" onclick="setAuthMode('create')" class="flex-1 py-1.5 text-xs font-semibold rounded-lg text-slate-500 hover:text-slate-800 transition-all">Create Event</button>
             </div>
 
             <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
-                <!-- Field 1: Secret Code -->
                 <div>
                     <label class="block text-xs font-bold uppercase text-slate-600 mb-1"><i data-lucide="key-round" class="w-3.5 h-3.5 inline text-teal-600"></i> Event Secret Code</label>
                     <input type="text" id="login-secret-code" required placeholder="e.g. BBQ2026" class="w-full px-4 py-2.5 sm:py-3 bg-slate-50 border rounded-xl text-sm font-mono uppercase font-bold focus:ring-2 focus:ring-teal-500">
                 </div>
 
-                <!-- Registration Mode Extra Fields (Unhidden in Create Mode) -->
                 <div id="register-extra-fields" class="hidden space-y-4 pt-2 border-t border-slate-100">
                     <div>
                         <label class="block text-xs font-bold uppercase text-slate-600 mb-1"><i data-lucide="heading" class="w-3.5 h-3.5 inline text-teal-600"></i> Event Name</label>
@@ -85,13 +73,11 @@
                     </div>
                 </div>
 
-                <!-- Lowest Field Box: Your Name -->
                 <div>
                     <label class="block text-xs font-bold uppercase text-slate-600 mb-1"><i data-lucide="user" class="w-3.5 h-3.5 inline text-teal-600"></i> Your Name</label>
                     <input type="text" id="login-user-name" required placeholder="e.g. Alex Wong" class="w-full px-4 py-2.5 sm:py-3 bg-slate-50 border rounded-xl text-sm font-semibold focus:ring-2 focus:ring-teal-500">
                 </div>
 
-                <!-- Remember Me (Default OFF) -->
                 <label class="flex items-center space-x-2 cursor-pointer pt-1">
                     <input type="checkbox" id="remember-me-checkbox" class="w-4 h-4 text-teal-600 rounded border-slate-300">
                     <span class="text-xs font-semibold text-slate-600">Remember me on this device</span>
@@ -105,11 +91,9 @@
             </form>
         </section>
 
-        <!-- CALENDAR HOME PAGE -->
         <section id="page-calendar" class="hidden">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:min-h-[calc(100vh-7rem)]">
                 
-                <!-- Title & Overview Card -->
                 <div class="order-1 lg:order-1 lg:col-span-4 lg:col-start-1 lg:row-start-1 bg-white/90 backdrop-blur-xl p-4 sm:p-5 rounded-3xl shadow-xl border border-white/50 flex flex-col justify-between gap-3 h-fit">
                     <div>
                         <div class="flex items-center justify-between gap-2">
@@ -129,7 +113,6 @@
                     </div>
                 </div>
 
-                <!-- Best Match Dates Dashboard Card -->
                 <div class="order-3 lg:order-3 lg:col-span-4 lg:col-start-1 lg:row-start-2 lg:self-start bg-white/90 backdrop-blur-xl p-4 sm:p-5 rounded-3xl shadow-xl border border-white/50 flex flex-col justify-start space-y-3 h-fit">
                     <div>
                         <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -140,10 +123,8 @@
                     <div id="leaderboard-container-home" class="flex flex-col justify-start space-y-2 max-h-64 lg:max-h-[calc(100vh-22rem)] overflow-y-auto pr-1"></div>
                 </div>
 
-                <!-- Calendar View Card -->
                 <div class="order-2 lg:order-2 lg:col-span-8 lg:col-start-5 lg:row-start-1 lg:row-span-2 bg-white/90 backdrop-blur-xl p-3.5 sm:p-6 rounded-3xl shadow-2xl border border-white/50 flex flex-col justify-between h-full">
                     <div>
-                        <!-- Month Bar -->
                         <div class="flex items-center justify-between mb-4 sm:mb-6">
                             <div class="flex items-center space-x-2 sm:space-x-3">
                                 <span id="cal-month-year" class="text-lg sm:text-2xl font-black text-slate-800">Month 2026</span>
@@ -158,15 +139,12 @@
                             </div>
                         </div>
 
-                        <!-- Weekdays Header -->
                         <div class="grid grid-cols-7 mb-2 text-center text-[10px] sm:text-xs font-bold text-slate-400 uppercase">
                             <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
                         </div>
 
-                        <!-- Calendar Days Grid -->
                         <div id="calendar-days-grid" class="grid grid-cols-7 gap-1 sm:gap-2 lg:gap-3"></div>
 
-                        <!-- Legend Markings -->
                         <div class="flex flex-wrap items-center gap-2.5 sm:gap-4 text-[11px] sm:text-xs font-semibold text-slate-600 mt-4 pt-3 border-t">
                             <span class="flex items-center gap-1"><i data-lucide="check-square" class="w-3.5 h-3.5 text-teal-600"></i> Draft</span>
                             <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span> Saved (Green)</span>
@@ -178,7 +156,6 @@
             </div>
         </section>
 
-        <!-- MEMBER LIST VIEW -->
         <section id="page-list" class="hidden space-y-4 sm:space-y-6">
             <div class="bg-white/90 backdrop-blur-xl p-4 sm:p-6 rounded-3xl shadow-2xl border border-white/50">
                 <div class="flex items-center justify-between mb-4 sm:mb-6 pb-3 border-b">
@@ -192,10 +169,8 @@
             </div>
         </section>
 
-        <!-- ADMIN & SETTINGS PAGE -->
         <section id="page-admin" class="hidden space-y-4 sm:space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                <!-- Settings Form Column -->
                 <div class="lg:col-span-2 bg-white/90 backdrop-blur-xl p-4 sm:p-6 rounded-3xl shadow-2xl border border-white/50 space-y-5">
                     <div class="flex items-center justify-between pb-3 border-b">
                         <div>
@@ -235,7 +210,6 @@
                     </div>
                 </div>
 
-                <!-- Blank Panel -->
                 <div class="bg-white/90 backdrop-blur-xl p-4 sm:p-6 rounded-3xl shadow-2xl border border-white/50 min-h-[250px] flex items-center justify-center text-slate-400 text-xs font-medium italic">
                     Additional Admin Tools Placeholder
                 </div>
@@ -244,8 +218,7 @@
 
     </main>
 
-    <!-- DATE DETAIL MODAL (DESKTOP & MOBILE) -->
-    <div id="date-detail-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div id="date-detail-modal" onclick="if(event.target === this) closeDateDetailModal()" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-5 sm:p-6 max-w-sm w-full shadow-2xl border space-y-4 relative">
             <div class="flex items-center justify-between border-b pb-3">
                 <div>
@@ -267,74 +240,63 @@
         </div>
     </div>
 
-    <!-- FLOATING INFO BUTTON -->
     <button onclick="toggleAppInfoModal(true)" class="fixed bottom-6 right-6 z-40 p-3.5 bg-slate-900/90 hover:bg-slate-800 text-teal-300 rounded-full border border-slate-700 shadow-2xl flex items-center justify-center transition-all transform hover:scale-105 cursor-pointer" title="App Info">
         <i data-lucide="help-circle" class="w-6 h-6 pointer-events-none"></i>
     </button>
 
-    <!-- APP INFO MODAL -->
-    <div id="app-info-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border space-y-5 relative text-center">
+    <div id="app-info-modal" onclick="if(event.target === this) toggleAppInfoModal(false)" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border space-y-4 relative text-center">
             
-            <!-- App Logo & Version -->
             <div class="flex flex-col items-center space-y-2">
-                <div class="p-3 bg-gradient-to-tr from-teal-400 to-emerald-400 text-slate-900 rounded-2xl shadow-md">
-                    <i data-lucide="users" class="w-8 h-8"></i>
+                <div class="w-12 h-12 bg-gradient-to-tr from-teal-400 to-emerald-400 text-slate-900 rounded-2xl shadow-md flex items-center justify-center">
+                    <i data-lucide="users" class="w-6 h-6"></i>
                 </div>
                 <div class="flex items-center gap-1.5">
-                    <h3 class="text-xl font-extrabold text-slate-900">DateMatch</h3>
+                    <h3 class="text-lg font-bold text-slate-900">DateMatch</h3>
                     <span class="text-[10px] font-bold font-mono px-2 py-0.5 bg-teal-100 text-teal-800 rounded-full border border-teal-200">v1.2.0</span>
                 </div>
-                <!-- 1 Line Intro / SubTitle -->
-                <p class="text-xs font-semibold text-slate-500">Friend Group Free Date Finder</p>
+                <p class="text-xs text-slate-500 font-medium">Friend Group Free Date Finder</p>
             </div>
 
-            <!-- Author Section (Icon goes first, then name) -->
-            <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center gap-2">
-                <i data-lucide="code-2" class="w-4 h-4 text-teal-600"></i>
-                <span class="text-xs font-bold text-slate-700">Author: <strong class="text-slate-900">Arthur Lee</strong> (@arthur_le.e)</span>
+            <div class="flex items-center justify-center gap-2 p-3 bg-slate-50 border border-slate-200/80 rounded-2xl">
+                <div class="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs">
+                    <i data-lucide="user" class="w-4 h-4"></i>
+                </div>
+                <div class="text-left text-xs">
+                    <div class="text-slate-400 text-[10px]">Author</div>
+                    <div class="font-bold text-slate-800">Arthur Lee <span class="text-slate-400 font-normal">(@arthur_le.e)</span></div>
+                </div>
             </div>
 
-            <!-- Action Link Buttons -->
-            <div class="space-y-2 pt-1">
-                <!-- GitHub Project Link Button -->
-                <a href="https://github.com/arthur042l/DateMatch" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow flex items-center justify-center gap-2 transition-all">
-                    <i data-lucide="github" class="w-4 h-4 text-teal-400"></i>
-                    <span>Project GitHub Page</span>
-                </a>
-                
-                <!-- Author Profile Link Button -->
-                <a href="https://github.com/arthur042l" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl border flex items-center justify-center gap-2 transition-all">
-                    <i data-lucide="github" class="w-4 h-4 text-slate-600"></i>
-                    <span>Developer Profile</span>
-                </a>
-            </div>
+            <a href="https://github.com/arthur042l/DateMatch" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-2xl text-xs transition-colors">
+                <div class="flex items-center gap-2 font-bold text-slate-800">
+                    <i data-lucide="github" class="w-4 h-4 text-slate-700"></i>
+                    <span>Project Github Page</span>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+            </a>
 
-            <!-- Text Links (Report Problem & Update Log) -->
-            <div class="flex items-center justify-center gap-4 text-xs font-semibold text-slate-500 pt-1 border-t border-slate-100">
-                <a href="https://github.com/arthur042l/DateMatch/issues" target="_blank" rel="noopener noreferrer" class="hover:text-teal-600 flex items-center gap-1 transition-colors">
-                    <i data-lucide="bug" class="w-3.5 h-3.5"></i> Report Problem
+            <div class="flex items-center justify-center gap-3 text-xs font-semibold text-slate-500 pt-1">
+                <a href="https://github.com/arthur042l/DateMatch/issues" target="_blank" rel="noopener noreferrer" class="hover:text-teal-600 transition-colors">
+                    Report Problem
                 </a>
                 <span>•</span>
-                <a href="https://github.com/arthur042l/DateMatch/releases" target="_blank" rel="noopener noreferrer" class="hover:text-teal-600 flex items-center gap-1 transition-colors">
-                    <i data-lucide="scroll-text" class="w-3.5 h-3.5"></i> Update Log
+                <a href="https://github.com/arthur042l/DateMatch/releases" target="_blank" rel="noopener noreferrer" class="hover:text-teal-600 transition-colors">
+                    Update Log
                 </a>
             </div>
 
-            <!-- Done / Close Button -->
-            <button onclick="toggleAppInfoModal(false)" class="w-full py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all">
+            <button onclick="toggleAppInfoModal(false)" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-md transition-all">
                 Done
             </button>
         </div>
     </div>
 
-    <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-24 right-6 px-4 py-3 bg-slate-900 text-white text-xs font-semibold rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-2 transition-all transform translate-y-16 opacity-0 pointer-events-none z-50">
         <i data-lucide="info" id="toast-icon" class="w-4 h-4 text-teal-400"></i>
         <span id="toast-msg">Notification Message</span>
     </div>
 
-    <!-- Script File loaded as ES module -->
     <script type="module" src="script.js"></script>
 </body>
 </html>
