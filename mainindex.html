@@ -256,20 +256,28 @@
                     <h3 class="text-lg font-bold text-slate-900">DateMatch</h3>
                     <span class="text-[10px] font-bold font-mono px-2 py-0.5 bg-teal-100 text-teal-800 rounded-full border border-teal-200">v1.2.0</span>
                 </div>
-                <p class="text-xs text-slate-500 font-medium">Friend Group Free Date Finder</p>
+                <p class="text-xs text-slate-500 font-medium">Tool for who can't match hang out time.</p>
             </div>
 
-            <div class="flex items-center justify-center gap-2 p-3 bg-slate-50 border border-slate-200/80 rounded-2xl">
-                <div class="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs">
-                    <i data-lucide="user" class="w-4 h-4"></i>
+            <!-- Author Card (Square Image Avatar with slight offset + Rounded Square Badges on Right) -->
+            <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200/80 rounded-2xl text-left">
+                <div class="flex items-center gap-2.5">
+                    <!-- Square Image Avatar offset slightly -->
+                    <img src="tabicon.png" alt="Author Icon" class="w-8 h-8 rounded-lg object-cover translate-x-1 shadow-sm border border-slate-200" onerror="this.src='https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/user.svg'">
+                    <div class="text-xs">
+                        <div class="text-slate-400 text-[10px] font-semibold">Author</div>
+                        <div class="font-bold text-slate-800">Arthur Lee <span class="text-slate-400 font-normal">(@arthur_le.e)</span></div>
+                    </div>
                 </div>
-                <div class="text-left text-xs">
-                    <div class="text-slate-400 text-[10px]">Author</div>
-                    <div class="font-bold text-slate-800">Arthur Lee <span class="text-slate-400 font-normal">(@arthur_le.e)</span></div>
+                <!-- Two Rounded Square Badges on Right -->
+                <div class="flex items-center gap-1">
+                    <span class="text-[10px] font-bold px-1.5 py-0.5 bg-teal-100 text-teal-800 rounded-md border border-teal-200">Dev</span>
+                    <span class="text-[10px] font-bold px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-md border border-emerald-200">Lead</span>
                 </div>
             </div>
 
-            <a href="https://github.com/arthur042l/EggSpread-time-reserver/" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-2xl text-xs transition-colors">
+            <!-- Button 1: Project GitHub Page (Left Icon + Title + Right Chevron) -->
+            <a href="https://github.com/arthur042l/DateMatch" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-2xl text-xs transition-colors">
                 <div class="flex items-center gap-2 font-bold text-slate-800">
                     <i data-lucide="github" class="w-4 h-4 text-slate-700"></i>
                     <span>Project Github Page</span>
@@ -277,13 +285,23 @@
                 <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
             </a>
 
-            <div class="flex items-center justify-center gap-3 text-xs font-semibold text-slate-500 pt-1">
-                <a href="https://github.com/arthur042l/EggSpread-time-reserver/issues" target="_blank" rel="noopener noreferrer" class="hover:text-teal-600 transition-colors">
-                    Report Problem
+            <!-- Button 2: Developer Profile Link Button -->
+            <a href="https://github.com/arthur042l" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-2xl text-xs transition-colors">
+                <div class="flex items-center gap-2 font-bold text-slate-800">
+                    <i data-lucide="user-check" class="w-4 h-4 text-teal-600"></i>
+                    <span>Developer Profile</span>
+                </div>
+                <i data-lucide="external-link" class="w-3.5 h-3.5 text-slate-400"></i>
+            </a>
+
+            <!-- Button 3 / Text Links: Report Problem & Update Log with Icons -->
+            <div class="flex items-center justify-center gap-4 text-xs font-semibold text-slate-500 pt-1">
+                <a href="https://github.com/arthur042l/DateMatch/issues" target="_blank" rel="noopener noreferrer" class="hover:text-teal-600 flex items-center gap-1 transition-colors">
+                    <i data-lucide="bug" class="w-3.5 h-3.5"></i> Report Problem
                 </a>
                 <span>•</span>
-                <a href="https://github.com/arthur042l/EggSpread-time-reserver/releases" target="_blank" rel="noopener noreferrer" class="hover:text-teal-600 transition-colors">
-                    Update Log
+                <a href="https://github.com/arthur042l/DateMatch/releases" target="_blank" rel="noopener noreferrer" class="hover:text-teal-600 flex items-center gap-1 transition-colors">
+                    <i data-lucide="history" class="w-3.5 h-3.5"></i> Update Log
                 </a>
             </div>
 
