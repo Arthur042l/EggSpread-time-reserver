@@ -12,8 +12,8 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <!-- Custom Style -->
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="images/png" href="tabicon.png">
-    <link rel="apple-touch-icon" type="images/png" href="tabicon.png">
+    <link rel="icon" type="image/png" href="tabicon.png">
+    <link rel="apple-touch-icon" type="image/png" href="tabicon.png">
 </head>
 <body class="bg-custom-gradient min-h-screen text-slate-800 font-sans antialiased pb-12 transition-all">
 
@@ -267,31 +267,68 @@
         </div>
     </div>
 
-    <!-- FLOATING INFO BUTTON (Clicking whole button or icon works cleanly) -->
+    <!-- FLOATING INFO BUTTON -->
     <button onclick="toggleAppInfoModal(true)" class="fixed bottom-6 right-6 z-40 p-3.5 bg-slate-900/90 hover:bg-slate-800 text-teal-300 rounded-full border border-slate-700 shadow-2xl flex items-center justify-center transition-all transform hover:scale-105 cursor-pointer" title="App Info">
         <i data-lucide="help-circle" class="w-6 h-6 pointer-events-none"></i>
     </button>
 
     <!-- APP INFO MODAL -->
     <div id="app-info-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl border space-y-3.5 relative">
-            <div class="flex items-center justify-between border-b pb-3">
-                <h3 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <i data-lucide="info" class="w-5 h-5 text-teal-600"></i> About DateMatch
-                </h3>
-                <button onclick="toggleAppInfoModal(false)" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border space-y-5 relative text-center">
+            
+            <!-- App Logo & Version -->
+            <div class="flex flex-col items-center space-y-2">
+                <div class="p-3 bg-gradient-to-tr from-teal-400 to-emerald-400 text-slate-900 rounded-2xl shadow-md">
+                    <i data-lucide="users" class="w-8 h-8"></i>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <h3 class="text-xl font-extrabold text-slate-900">DateMatch</h3>
+                    <span class="text-[10px] font-bold font-mono px-2 py-0.5 bg-teal-100 text-teal-800 rounded-full border border-teal-200">v1.2.0</span>
+                </div>
+                <!-- 1 Line Intro / SubTitle -->
+                <p class="text-xs font-semibold text-slate-500">Friend Group Free Date Finder</p>
             </div>
-            <div class="text-xs text-slate-600 space-y-2 leading-relaxed">
-                <p><strong>1. Automatic Layout:</strong> Responsive layout adapted for <strong>Mobile</strong> and <strong>Desktop</strong> displays.</p>
-                <p><strong>2. Secret Code Pairing:</strong> Toggle between <strong>Join Event</strong> or <strong>Create Event</strong> to log into or register a calendar.</p>
-                <p><strong>3. Draft Checkboxes & Saved Responses:</strong> Tap calendar boxes to check draft days. Tap <strong>Save Response</strong> to lock in your choices with a solid green background.</p>
-                <p><strong>4. ALL FREE Highlight:</strong> When all expected group members mark a day as free, it lights up with a golden <strong>ALL FREE 🎉</strong> banner!</p>
+
+            <!-- Author Section (Icon goes first, then name) -->
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center gap-2">
+                <i data-lucide="code-2" class="w-4 h-4 text-teal-600"></i>
+                <span class="text-xs font-bold text-slate-700">Author: <strong class="text-slate-900">Arthur Lee</strong> (@arthur_le.e)</span>
             </div>
-            <button onclick="toggleAppInfoModal(false)" class="w-full py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-slate-800">Got it!</button>
+
+            <!-- Action Link Buttons -->
+            <div class="space-y-2 pt-1">
+                <!-- GitHub Project Link Button -->
+                <a href="https://github.com/arthur042l/DateMatch" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow flex items-center justify-center gap-2 transition-all">
+                    <i data-lucide="github" class="w-4 h-4 text-teal-400"></i>
+                    <span>Project GitHub Page</span>
+                </a>
+                
+                <!-- Author Profile Link Button -->
+                <a href="https://github.com/arthur042l" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl border flex items-center justify-center gap-2 transition-all">
+                    <i data-lucide="github" class="w-4 h-4 text-slate-600"></i>
+                    <span>Developer Profile</span>
+                </a>
+            </div>
+
+            <!-- Text Links (Report Problem & Update Log) -->
+            <div class="flex items-center justify-center gap-4 text-xs font-semibold text-slate-500 pt-1 border-t border-slate-100">
+                <a href="https://github.com/arthur042l/DateMatch/issues" target="_blank" rel="noopener noreferrer" class="hover:text-teal-600 flex items-center gap-1 transition-colors">
+                    <i data-lucide="bug" class="w-3.5 h-3.5"></i> Report Problem
+                </a>
+                <span>•</span>
+                <a href="https://github.com/arthur042l/DateMatch/releases" target="_blank" rel="noopener noreferrer" class="hover:text-teal-600 flex items-center gap-1 transition-colors">
+                    <i data-lucide="scroll-text" class="w-3.5 h-3.5"></i> Update Log
+                </a>
+            </div>
+
+            <!-- Done / Close Button -->
+            <button onclick="toggleAppInfoModal(false)" class="w-full py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all">
+                Done
+            </button>
         </div>
     </div>
 
-    <!-- Toast Notification (Positioned safely above floating info button without blocking touch events) -->
+    <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-24 right-6 px-4 py-3 bg-slate-900 text-white text-xs font-semibold rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-2 transition-all transform translate-y-16 opacity-0 pointer-events-none z-50">
         <i data-lucide="info" id="toast-icon" class="w-4 h-4 text-teal-400"></i>
         <span id="toast-msg">Notification Message</span>
