@@ -1,13 +1,14 @@
 # EggSpread-time-reserver
 A tool for Bitches who often not responding for hanging out.
 
-Link:
+Link to Web App:
 
 https://arthur042l.github.io/EggSpread-time-reserver/
 
 ## Task:
+
 Priority!
-1. 
+None
 
 Major Code Changes:
 - en/chin/genZ/Canton ver language
@@ -28,8 +29,6 @@ Minor:
   - author
   - version
   - images
-
-Unclassify:
 - Settings page of the event:
   - V No. of member of expected respond
   - V Code settings
@@ -37,6 +36,10 @@ Unclassify:
   - copy link
   - ? admin dashboard
     - delete event
+
+Unclassify:
+None
+
 
 ### Done Task
 1. !V Hide the api key in private. (updated firebase rules instead)
