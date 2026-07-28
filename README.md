@@ -1,5 +1,5 @@
 # EggSpread-time-reserver
-A tool for Bitches who often not responding for hanging out.
+A tool for who often not matching hang out time with Friends.
 
 Link to Web App:
 
@@ -22,10 +22,10 @@ Major Code Changes:
 
 Minor:
 - modify: more unify indicator and design of date boxes
+- modify: longer height date boxes for mobile mode
 - All free depend on joined in and expect no. of member
 - random color for profile picture(easier identification
 - Redisgned brand and icon.
-
 - Settings page of the event:
   - V No. of member of expected respond
   - V Code settings
@@ -34,12 +34,9 @@ Minor:
   - ? admin dashboard
     - delete event
 
-Unclassify:
-None
 
-
-### Done Task
-1. !V Hide the api key in private. (updated firebase rules instead)
+## Done Task
+- V ! Hide the api key in private. (updated firebase rules instead)
 - V Login Page( secret code pairing for each event )
   - V only login foe existing, need register.
 - V remember me ! ( name fill in )
@@ -59,6 +56,6 @@ None
 - V list view showing list of all member filled the form (showing their free time)
 - V ios web app bookmark icon.
 - V app info
-  - author
-  - version
-  - images
+  - V author
+  - V version
+  - V images
