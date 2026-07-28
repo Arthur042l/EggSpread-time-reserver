@@ -25,10 +25,7 @@ Minor:
 - All free depend on joined in and expect no. of member
 - random color for profile picture(easier identification
 - Redisgned brand and icon.
-- app info
-  - author
-  - version
-  - images
+
 - Settings page of the event:
   - V No. of member of expected respond
   - V Code settings
@@ -61,3 +58,7 @@ None
 - V wide mode for computer tablet
 - V list view showing list of all member filled the form (showing their free time)
 - V ios web app bookmark icon.
+- V app info
+  - author
+  - version
+  - images
