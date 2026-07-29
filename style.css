@@ -7,6 +7,13 @@ body {
     box-sizing: border-box;
 }
 
+.brand-gradient {
+    background: linear-gradient(135deg, #0dd7a8 16%, #5ad849 63%, #d6d971 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
 /* Background Styling */
 .bg-custom-gradient {
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #0d9488 100%);
