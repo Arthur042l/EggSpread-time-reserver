@@ -376,11 +376,13 @@ window.navigate = function(page) {
     }
     activePage = page;
 
+    // Header remains visible on all pages including login
     const mainHeader = document.getElementById('main-header');
     if (mainHeader) {
         mainHeader.classList.remove('hidden');
     }
 
+    // Toggle event navigation tabs (only visible inside active event)
     const navTabs = document.getElementById('main-nav-tabs');
     if (navTabs) {
         navTabs.classList.toggle('hidden', page === 'login');
