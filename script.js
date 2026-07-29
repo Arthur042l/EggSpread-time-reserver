@@ -34,7 +34,7 @@ try {
     console.warn("Firebase initialization warning:", err);
 }
 
-// Google Auth Handler
+// Google Auth Handler (Authenticates with Google without overriding the user's custom input name)
 window.signInWithGoogle = async function() {
     if (!auth) {
         window.showToast("Firebase Authentication not initialized.");
@@ -45,12 +45,15 @@ window.signInWithGoogle = async function() {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
         if (user) {
-            const userName = user.displayName || user.email.split('@')[0];
+            const googleName = user.displayName || user.email.split('@')[0];
             const nameEl = document.getElementById('login-user-name');
-            if (nameEl) nameEl.value = userName;
             
-            currentUserName = userName;
-            window.showToast(`Google authenticated as ${userName}`);
+            // Preserve user's manually entered name if present; otherwise fill with Google name
+            if (nameEl && !nameEl.value.trim()) {
+                nameEl.value = googleName;
+            }
+            
+            window.showToast(`Google authenticated as ${googleName}`);
             window.toggleSettingsModal(false);
         }
     } catch (err) {
@@ -382,10 +385,16 @@ window.navigate = function(page) {
         mainHeader.classList.remove('hidden');
     }
 
-    // Toggle event navigation tabs (only visible inside active event)
+    // Toggle event navigation tabs (Calendar, Members, Event Settings) only when logged in
     const navTabs = document.getElementById('main-nav-tabs');
     if (navTabs) {
-        navTabs.classList.toggle('hidden', page === 'login');
+        if (currentSecretCode && currentUserName && page !== 'login') {
+            navTabs.classList.remove('hidden');
+            navTabs.classList.add('flex');
+        } else {
+            navTabs.classList.add('hidden');
+            navTabs.classList.remove('flex');
+        }
     }
 
     const userInfoPill = document.getElementById('user-info-pill');
