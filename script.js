@@ -347,9 +347,16 @@ window.signInWithGoogle = async function() {
     }
 };
 
+// Clear saved user local session
 window.clearUserLocalSession = function() {
     localStorage.removeItem('dateMatch_savedUserName');
     window.showToast("Local user session cleared!");
+};
+
+// App Settings Modal Toggle
+window.toggleSettingsModal = function(show) {
+    const modal = document.getElementById('settings-modal');
+    if (modal) modal.classList.toggle('hidden', !show);
 };
 
 let activePage = 'login';
