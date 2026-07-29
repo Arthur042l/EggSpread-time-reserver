@@ -8,8 +8,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/png" href="V3px800.png">
-    <link rel="apple-touch-icon" type="image/png" href="V3px800.png">
+    <link rel="icon" type="image/png" href="./material/AppIcon/V3px800.png">
+    <link rel="apple-touch-icon" type="image/png" href="./material/AppIcon/V3px1200Sq.png">
 </head>
 <body class="bg-custom-gradient min-h-screen text-slate-800 font-sans antialiased pb-12 transition-all">
 
@@ -17,7 +17,7 @@
         <div class="max-w-7xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-2">
             <div class="flex items-center space-x-2 sm:space-x-3 cursor-pointer" onclick="navigate('calendar')">
                 <div class="p-1 sm:p-1 rounded-xl shadow font-bold">
-                    <img src="material/AppIcon/V3px800.png" alt="DateMatch Icon" class="w-9 h-9"></img>
+                    <img src="./material/AppIcon/V3px800.png" alt="DateMatch Icon" class="w-9 h-9"></img>
                 </div>
                 <div>
                     <span class="font-bold text-base sm:text-lg brand-gradient">DateMatch</span>
@@ -62,7 +62,7 @@
             <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold uppercase text-slate-600 mb-1"><i data-lucide="key-round" class="w-3.5 h-3.5 inline text-teal-600"></i> Event Secret Code</label>
-                    <input type="text" id="login-secret-code" required placeholder="e.g. BBQ2026" class="w-full px-4 py-2.5 sm:py-3 bg-slate-50 border rounded-xl text-sm font-mono uppercase font-bold focus:ring-2 focus:ring-teal-500">
+                    <input type="text" id="login-secret-code" required placeholder="e.g. BBQ2026" maxLength="10" class="w-full px-4 py-2.5 sm:py-3 bg-slate-50 border rounded-xl text-sm font-mono uppercase font-bold focus:ring-2 focus:ring-teal-500">
                 </div>
 
                 <div id="register-extra-fields" class="hidden space-y-4 pt-2 border-t border-slate-100">
