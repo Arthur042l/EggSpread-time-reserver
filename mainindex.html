@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DateMatch - Friend Group HangOut Date Matcher</title>
+    <title>DateMatch - Friend Group Free Date Finder</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -26,19 +26,14 @@
             </div>
 
             <div id="nav-actions" class="flex items-center space-x-2 sm:space-x-3">
-                <!-- 3 Event Tabs Navigation -->
-                <nav id="main-nav-tabs" class="flex bg-slate-800/80 p-0.5 sm:p-1 rounded-xl border border-slate-700/50 text-[11px] sm:text-xs font-semibold">
+                <nav id="main-nav-tabs" class="flex items-center bg-slate-800/80 p-0.5 sm:p-1 rounded-xl border border-slate-700/50 text-[11px] sm:text-xs font-semibold space-x-0.5">
                     <button id="tab-calendar" onclick="navigate('calendar')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-teal-400 bg-slate-700 shadow"><i data-lucide="calendar" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> Calendar</span></button>
                     <button id="tab-list" onclick="navigate('list')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-300 hover:text-white"><i data-lucide="list" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> Members</span></button>
                     <button id="tab-admin" onclick="navigate('admin')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-300 hover:text-white"><i data-lucide="settings" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> Settings</span></button>
+                    <button onclick="toggleSettingsModal(true)" class="px-2 sm:px-2.5 py-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-700/60 transition-all flex items-center justify-center" title="App Settings">
+                        <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
+                    </button>
                 </nav>
-
-                <!-- Standalone App Settings Rounded Square Button (from image_7e5a24.png) -->
-                <button onclick="toggleSettingsModal(true)" 
-                        class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-teal-300 rounded-xl border border-slate-700/60 shadow-sm transition-all flex items-center justify-center" 
-                        title="App Settings">
-                    <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
-                </button>
 
                 <div id="user-info-pill" class="hidden items-center gap-1.5 bg-slate-800 border border-slate-700 px-2 sm:px-3 py-1 rounded-xl">
                     <div id="user-avatar-initial" class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-teal-500 text-slate-900 font-bold text-xs flex items-center justify-center">?</div>
@@ -226,7 +221,6 @@
 
     </main>
 
-    <!-- DATE DETAIL MODAL -->
     <div id="date-detail-modal" onclick="if(event.target === this) closeDateDetailModal()" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-5 sm:p-6 max-w-sm w-full shadow-2xl border space-y-4 relative">
             <div class="flex items-center justify-between border-b pb-3">
@@ -249,7 +243,6 @@
         </div>
     </div>
 
-    <!-- APP SETTINGS POPUP MODAL (Opens on hover/click of header sliders button, dismisses on backdrop click) -->
     <div id="settings-modal" onclick="if(event.target === this) toggleSettingsModal(false)" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border space-y-4 relative text-center">
             
@@ -266,10 +259,9 @@
                 <button onclick="toggleSettingsModal(false)" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
 
-            <!-- Sign in with Google -->
             <div class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2 text-left">
                 <div class="text-xs font-bold text-slate-800">Google Authentication</div>
-                <button onclick="signInWithGoogle()" class="w-full py-2.5 px-4 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-2 transition-all">
+                <button type="button" onclick="signInWithGoogle()" class="w-full py-2.5 px-4 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer">
                     <svg class="w-4 h-4" viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                         <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -280,16 +272,15 @@
                 </button>
             </div>
 
-            <!-- Clear "Remember Me" Session -->
             <div class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between text-left">
                 <div>
                     <div class="text-xs font-bold text-slate-800">Clear Saved Session</div>
                     <div class="text-[11px] text-slate-500">Forget saved user name</div>
                 </div>
-                <button onclick="clearUserLocalSession()" class="px-3 py-1.5 bg-slate-200 hover:bg-red-50 hover:text-red-600 text-slate-700 font-bold text-xs rounded-xl transition-all">Clear</button>
+                <button type="button" onclick="clearUserLocalSession()" class="px-3 py-1.5 bg-slate-200 hover:bg-red-50 hover:text-red-600 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer">Clear</button>
             </div>
 
-            <button onclick="toggleSettingsModal(false)" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-md transition-all">
+            <button type="button" onclick="toggleSettingsModal(false)" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer">
                 Done
             </button>
         </div>
@@ -299,7 +290,6 @@
         <i data-lucide="help-circle" class="w-6 h-6 pointer-events-none"></i>
     </button>
 
-    <!-- App info -->
     <div id="app-info-modal" onclick="if(event.target === this) toggleAppInfoModal(false)" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border space-y-4 relative text-center">
             
@@ -314,17 +304,14 @@
                 <p class="text-xs text-slate-500 font-medium">Tool for who can't match hang out time.</p>
             </div>
 
-            <!-- Author Card (Square Image Avatar with slight offset + Rounded Square Badges on Right) -->
             <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200/80 rounded-2xl text-left">
                 <div class="flex items-center gap-2.5">
-                    <!-- Square Image Avatar offset slightly -->
                     <img src="material/pinguVibeCode.png" alt="Author Icon" class="w-12 h-12 rounded-lg object-cover translate-x-1 translate-y-0.5" onerror="this.src='https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/user.svg'">
                     <div class="text-xs">
                         <div class="text-slate-400 text-[10px] font-semibold">Developed by</div>
                         <div class="font-bold text-slate-800">Arthur Lee <span class="text-slate-400 font-normal">(@arthur042l)</span></div>
                     </div>
                 </div>
-                <!-- Two Rounded Square Icon Buttons on Right -->
                 <div class="flex items-center gap-1.5">
                     <a href="https://github.com/arthur042l" target="_blank" rel="noopener noreferrer" 
                        class="w-7 h-7 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-teal-50 hover:text-teal-600 border border-slate-200/80 text-slate-700 transition-all shadow-sm" 
@@ -339,9 +326,7 @@
                 </div>
             </div>
 
-            <!-- Unified Joined Link Card (No outer gaps or double borders between items) -->
             <div class="bg-slate-50 border border-slate-200/80 rounded-2xl overflow-hidden divide-y divide-slate-200/80 text-left">
-                <!-- Top Button: Project GitHub Page (Left Icon + Title + Right Chevron) -->
                 <a href="https://github.com/arthur042l/EggSpread-time-reserver" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-3.5 hover:bg-slate-100 text-xs transition-colors">
                     <div class="flex items-center gap-2.5 font-bold text-slate-800">
                         <img src="material/GitHubInverocatBlack.png" class="w-4 h-4">
@@ -350,7 +335,6 @@
                     <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
                 </a>
 
-                <!-- Bottom Button: Developer Profile Link Button -->
                 <a href="https://github.com/arthur042l" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between p-3.5 hover:bg-slate-100 text-xs transition-colors">
                     <div class="flex items-center gap-2.5 font-bold text-slate-800">
                         <i data-lucide="user-check" class="w-4 h-4 text-slate-700"></i>
@@ -360,7 +344,6 @@
                 </a>
             </div> 
 
-            <!-- Button 3 / Text Links: Report Problem & Update Log with Icons -->
             <div class="flex items-center justify-center gap-4 text-xs font-semibold text-slate-500 pt-1">
                 <a href="https://github.com/arthur042l/EggSpread-time-reserver/issues" target="_blank" rel="noopener noreferrer" class="hover:text-teal-600 flex items-center gap-1 transition-colors">
                     <i data-lucide="bug" class="w-3.5 h-3.5"></i> Report Problem
