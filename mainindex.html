@@ -25,17 +25,19 @@
                 </div>
             </div>
 
-            <div id="nav-actions" class="flex items-center space-x-1.5 sm:space-x-3">
-                <!-- Event Navigation Tabs (3 event tabs) -->
+            <div id="nav-actions" class="flex items-center space-x-2 sm:space-x-3">
+                <!-- 3 Event Tabs Navigation -->
                 <nav id="main-nav-tabs" class="flex bg-slate-800/80 p-0.5 sm:p-1 rounded-xl border border-slate-700/50 text-[11px] sm:text-xs font-semibold">
                     <button id="tab-calendar" onclick="navigate('calendar')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-teal-400 bg-slate-700 shadow"><i data-lucide="calendar" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> Calendar</span></button>
                     <button id="tab-list" onclick="navigate('list')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-300 hover:text-white"><i data-lucide="list" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> Members</span></button>
-                    <button id="tab-admin" onclick="navigate('admin')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-300 hover:text-white"><i data-lucide="settings" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> Event Settings</span></button>
+                    <button id="tab-admin" onclick="navigate('admin')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-300 hover:text-white"><i data-lucide="settings" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> Settings</span></button>
                 </nav>
 
-                <!-- Standalone App Settings Button (Visible across all views) -->
-                <button id="tab-app-settings" onclick="navigate('app-settings')" class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50 text-[11px] sm:text-xs font-semibold transition-all flex items-center" title="App Settings">
-                    <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> App Settings</span>
+                <!-- Standalone App Settings Rounded Square Button (from image_7e5a24.png) -->
+                <button onclick="toggleSettingsModal(true)" 
+                        class="w-9 h-9 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-teal-300 border border-slate-700/60 shadow-md flex items-center justify-center transition-all cursor-pointer transform hover:scale-105" 
+                        title="App Settings">
+                    <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
                 </button>
 
                 <div id="user-info-pill" class="hidden items-center gap-1.5 bg-slate-800 border border-slate-700 px-2 sm:px-3 py-1 rounded-xl">
@@ -175,14 +177,13 @@
             </div>
         </section>
 
-        <!-- EVENT SETTINGS PAGE -->
         <section id="page-admin" class="hidden space-y-4 sm:space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                 <div class="lg:col-span-2 bg-white/90 backdrop-blur-xl p-4 sm:p-6 rounded-3xl shadow-2xl border border-white/50 space-y-5">
                     <div class="flex items-center justify-between pb-3 border-b">
                         <div>
                             <h2 class="text-lg sm:text-xl font-bold text-slate-900">Event Settings</h2>
-                            <p class="text-xs text-slate-500">Configure event details and responder goal</p>
+                            <p class="text-xs text-slate-500">Configure expected responder count and secret code</p>
                         </div>
                         <span class="p-2 bg-teal-50 text-teal-600 rounded-xl"><i data-lucide="settings" class="w-5 h-5"></i></span>
                     </div>
@@ -218,64 +219,14 @@
                 </div>
 
                 <div class="bg-white/90 backdrop-blur-xl p-4 sm:p-6 rounded-3xl shadow-2xl border border-white/50 min-h-[250px] flex items-center justify-center text-slate-400 text-xs font-medium italic">
-                    Additional Event Tools Placeholder
-                </div>
-            </div>
-        </section>
-
-        <!-- SEPARATE APP SETTINGS PAGE -->
-        <section id="page-app-settings" class="hidden space-y-4 sm:space-y-6">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                <div class="lg:col-span-2 bg-white/90 backdrop-blur-xl p-4 sm:p-6 rounded-3xl shadow-2xl border border-white/50 space-y-6">
-                    <div class="flex items-center justify-between pb-3 border-b">
-                        <div>
-                            <h2 class="text-lg sm:text-xl font-bold text-slate-900">App Preferences & Authentication</h2>
-                            <p class="text-xs text-slate-500">Manage account login methods and app sessions</p>
-                        </div>
-                        <span class="p-2 bg-teal-50 text-teal-600 rounded-xl"><i data-lucide="sliders-horizontal" class="w-5 h-5"></i></span>
-                    </div>
-
-                    <!-- Google Authentication Option -->
-                    <div class="space-y-3">
-                        <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2"><i data-lucide="shield-check" class="w-4 h-4 text-teal-600"></i> Account Authentication</h3>
-                        <div class="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                            <div>
-                                <div class="text-xs font-bold text-slate-800">Sign in with Google</div>
-                                <div class="text-[11px] text-slate-500">Authenticate your Google account for easy login</div>
-                            </div>
-                            <button onclick="signInWithGoogle()" class="py-2 px-4 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl font-bold text-xs shadow-sm flex items-center gap-2 transition-all">
-                                <svg class="w-4 h-4" viewBox="0 0 24 24">
-                                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                                </svg>
-                                <span>Sign In</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Session & Cache Management Section -->
-                    <div class="space-y-3 pt-2">
-                        <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2"><i data-lucide="user-x" class="w-4 h-4 text-teal-600"></i> Session Preferences</h3>
-                        <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between">
-                            <div>
-                                <div class="text-xs font-bold text-slate-800">Clear "Remember Me" Session</div>
-                                <div class="text-[11px] text-slate-500">Forget saved user name from local storage on this browser</div>
-                            </div>
-                            <button onclick="clearUserLocalSession()" class="px-3 py-1.5 bg-slate-200 hover:bg-red-50 hover:text-red-600 text-slate-700 font-bold text-xs rounded-xl transition-all">Clear Session</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white/90 backdrop-blur-xl p-4 sm:p-6 rounded-3xl shadow-2xl border border-white/50 min-h-[250px] flex items-center justify-center text-slate-400 text-xs font-medium italic">
-                    Additional Preferences Placeholder
+                    Additional Tools Placeholder
                 </div>
             </div>
         </section>
 
     </main>
 
+    <!-- DATE DETAIL MODAL -->
     <div id="date-detail-modal" onclick="if(event.target === this) closeDateDetailModal()" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-5 sm:p-6 max-w-sm w-full shadow-2xl border space-y-4 relative">
             <div class="flex items-center justify-between border-b pb-3">
@@ -295,6 +246,52 @@
                 <button id="modal-toggle-free-btn" class="w-full py-2 bg-teal-600 text-white font-bold text-xs rounded-xl hover:bg-teal-700">Mark Myself Free</button>
                 <button onclick="closeDateDetailModal()" class="w-full py-2 bg-slate-100 text-slate-700 font-semibold text-xs rounded-xl hover:bg-slate-200">Close</button>
             </div>
+        </div>
+    </div>
+
+    <!-- APP SETTINGS POPUP MODAL (Opens on hover/click of header sliders button, dismisses on backdrop click) -->
+    <div id="settings-modal" onclick="if(event.target === this) toggleSettingsModal(false)" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border space-y-4 relative text-center">
+            
+            <div class="flex items-center justify-between border-b pb-3 text-left">
+                <div class="flex items-center gap-2">
+                    <div class="p-2 bg-teal-50 text-teal-600 rounded-xl">
+                        <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">App Settings</h3>
+                        <p class="text-xs text-slate-500">Manage login options & sessions</p>
+                    </div>
+                </div>
+                <button onclick="toggleSettingsModal(false)" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <!-- Sign in with Google -->
+            <div class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2 text-left">
+                <div class="text-xs font-bold text-slate-800">Google Authentication</div>
+                <button onclick="signInWithGoogle()" class="w-full py-2.5 px-4 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-2 transition-all">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                    </svg>
+                    <span>Sign in with Google</span>
+                </button>
+            </div>
+
+            <!-- Clear "Remember Me" Session -->
+            <div class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between text-left">
+                <div>
+                    <div class="text-xs font-bold text-slate-800">Clear Saved Session</div>
+                    <div class="text-[11px] text-slate-500">Forget saved user name</div>
+                </div>
+                <button onclick="clearUserLocalSession()" class="px-3 py-1.5 bg-slate-200 hover:bg-red-50 hover:text-red-600 text-slate-700 font-bold text-xs rounded-xl transition-all">Clear</button>
+            </div>
+
+            <button onclick="toggleSettingsModal(false)" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-md transition-all">
+                Done
+            </button>
         </div>
     </div>
 
