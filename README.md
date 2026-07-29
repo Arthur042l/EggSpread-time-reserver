@@ -27,6 +27,8 @@ Minor:
 - All free depend on joined in and expect no. of member
 - random color for profile picture(easier identification
 - Redisgned brand and icon.
+- Event code length limit (10)
+  - text count on create
 - Settings page of the event:
   - V No. of member of expected respond
   - V Code settings
