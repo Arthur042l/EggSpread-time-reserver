@@ -34,6 +34,48 @@ try {
     console.warn("Firebase initialization warning:", err);
 }
 
+// Google Auth Handler
+window.signInWithGoogle = async function() {
+    if (!auth) {
+        window.showToast("Firebase Authentication not initialized.");
+        return;
+    }
+    try {
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        if (user) {
+            const userName = user.displayName || user.email.split('@')[0];
+            const nameEl = document.getElementById('login-user-name');
+            if (nameEl) nameEl.value = userName;
+            
+            currentUserName = userName;
+            window.showToast(`Google authenticated as ${userName}`);
+            window.toggleSettingsModal(false);
+        }
+    } catch (err) {
+        console.error("Google Auth error:", err);
+        window.showToast(`Google Auth error: ${err.message || 'Failed'}`);
+    }
+};
+
+// Clear saved user local session
+window.clearUserLocalSession = function() {
+    localStorage.removeItem('dateMatch_savedUserName');
+    window.showToast("Local user session cleared!");
+};
+
+// App Settings Modal Toggle
+window.toggleSettingsModal = function(show) {
+    const modal = document.getElementById('settings-modal');
+    if (modal) {
+        modal.classList.toggle('hidden', !show);
+        if (show && window.lucide) {
+            window.lucide.createIcons();
+        }
+    }
+};
+
 // Optimized Mobile/Desktop Layout Detection
 let isCompactMode = window.innerWidth < 768;
 let lastViewportWidth = window.innerWidth;
@@ -326,42 +368,9 @@ window.logout = function() {
     window.navigate('login');
 };
 
-// Google Auth Handler
-window.signInWithGoogle = async function() {
-    if (!auth) {
-        window.showToast("Firebase Authentication not initialized.");
-        return;
-    }
-    try {
-        const provider = new GoogleAuthProvider();
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        if (user) {
-            const nameEl = document.getElementById('login-user-name');
-            if (nameEl) nameEl.value = user.displayName || user.email.split('@')[0];
-            window.showToast(`Google authenticated as ${user.displayName || user.email}`);
-        }
-    } catch (err) {
-        console.error("Google Auth error:", err);
-        window.showToast(`Google Auth error: ${err.message}`);
-    }
-};
-
-// Clear saved user local session
-window.clearUserLocalSession = function() {
-    localStorage.removeItem('dateMatch_savedUserName');
-    window.showToast("Local user session cleared!");
-};
-
-// App Settings Modal Toggle
-window.toggleSettingsModal = function(show) {
-    const modal = document.getElementById('settings-modal');
-    if (modal) modal.classList.toggle('hidden', !show);
-};
-
 let activePage = 'login';
 window.navigate = function(page) {
-    if (page !== 'login' && page !== 'app-settings' && (!currentSecretCode || !currentUserName)) {
+    if (page !== 'login' && (!currentSecretCode || !currentUserName)) {
         window.showToast("Please enter the Event Code and your name.");
         page = 'login';
     }
@@ -392,22 +401,13 @@ window.navigate = function(page) {
     document.getElementById('page-calendar').classList.toggle('hidden', page !== 'calendar');
     document.getElementById('page-list').classList.toggle('hidden', page !== 'list');
     document.getElementById('page-admin').classList.toggle('hidden', page !== 'admin');
-    
-    const appSettingsPage = document.getElementById('page-app-settings');
-    if (appSettingsPage) {
-        appSettingsPage.classList.toggle('hidden', page !== 'app-settings');
-    }
 
-    ['calendar', 'list', 'admin', 'app-settings'].forEach(p => {
+    ['calendar', 'list', 'admin'].forEach(p => {
         const btn = document.getElementById(`tab-${p}`);
         if (btn) {
             btn.className = (p === page)
-                ? (p === 'app-settings'
-                    ? "px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-700 text-teal-400 font-bold border border-slate-600 shadow transition-all flex items-center"
-                    : "px-2.5 sm:px-3 py-1.5 rounded-lg text-teal-400 bg-slate-700 shadow")
-                : (p === 'app-settings'
-                    ? "px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50 text-[11px] sm:text-xs font-semibold transition-all flex items-center"
-                    : "px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-300 hover:text-white");
+                ? "px-2.5 sm:px-3 py-1.5 rounded-lg text-teal-400 bg-slate-700 shadow"
+                : "px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-300 hover:text-white";
         }
     });
 
@@ -673,7 +673,6 @@ function renderCalendar() {
         const cellPaddingClass = isCompactMode ? 'p-1 rounded-xl' : 'p-2 rounded-2xl';
         dCell.className = `aspect-square ${cellPaddingClass} flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden ${cardBgClass}`;
 
-        // Member Avatar Badges & +[Count] Capsule Overflow logic
         let avatarBadgesHtml = '';
         if (freeMembers.length > 0) {
             if (isCompactMode) {
@@ -945,7 +944,12 @@ window.showToast = function(msg) {
 
 window.toggleAppInfoModal = function(show) {
     const modal = document.getElementById('app-info-modal');
-    if (modal) modal.classList.toggle('hidden', !show);
+    if (modal) {
+        modal.classList.toggle('hidden', !show);
+        if (show && window.lucide) {
+            window.lucide.createIcons();
+        }
+    }
 };
 
 window.onload = function() {
