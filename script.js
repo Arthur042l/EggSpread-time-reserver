@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+import { getAuth, signInAnonymously, signInWithCustomToken, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 // Safe Firebase Initialization
@@ -100,7 +100,6 @@ let submittedDates = new Set();
 let calCurrentDate = new Date();
 let eventUnsubscribe = null;
 let isRegisterMode = false;
-let isAdminUnlocked = false;
 
 // Fast inline SVGs
 const SVG_ICONS = {
@@ -327,9 +326,35 @@ window.logout = function() {
     window.navigate('login');
 };
 
+// Google Auth Handler
+window.signInWithGoogle = async function() {
+    if (!auth) {
+        window.showToast("Firebase Authentication not initialized.");
+        return;
+    }
+    try {
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        if (user) {
+            const nameEl = document.getElementById('login-user-name');
+            if (nameEl) nameEl.value = user.displayName || user.email.split('@')[0];
+            window.showToast(`Google authenticated as ${user.displayName || user.email}`);
+        }
+    } catch (err) {
+        console.error("Google Auth error:", err);
+        window.showToast(`Google Auth error: ${err.message}`);
+    }
+};
+
+window.clearUserLocalSession = function() {
+    localStorage.removeItem('dateMatch_savedUserName');
+    window.showToast("Local user session cleared!");
+};
+
 let activePage = 'login';
 window.navigate = function(page) {
-    if (page !== 'login' && (!currentSecretCode || !currentUserName)) {
+    if (page !== 'login' && page !== 'app-settings' && (!currentSecretCode || !currentUserName)) {
         window.showToast("Please enter the Event Code and your name.");
         page = 'login';
     }
@@ -360,13 +385,22 @@ window.navigate = function(page) {
     document.getElementById('page-calendar').classList.toggle('hidden', page !== 'calendar');
     document.getElementById('page-list').classList.toggle('hidden', page !== 'list');
     document.getElementById('page-admin').classList.toggle('hidden', page !== 'admin');
+    
+    const appSettingsPage = document.getElementById('page-app-settings');
+    if (appSettingsPage) {
+        appSettingsPage.classList.toggle('hidden', page !== 'app-settings');
+    }
 
-    ['calendar', 'list', 'admin'].forEach(p => {
+    ['calendar', 'list', 'admin', 'app-settings'].forEach(p => {
         const btn = document.getElementById(`tab-${p}`);
         if (btn) {
             btn.className = (p === page)
-                ? "px-2.5 sm:px-3 py-1.5 rounded-lg text-teal-400 bg-slate-700 shadow"
-                : "px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-300 hover:text-white";
+                ? (p === 'app-settings'
+                    ? "px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-700 text-teal-400 font-bold border border-slate-600 shadow transition-all flex items-center"
+                    : "px-2.5 sm:px-3 py-1.5 rounded-lg text-teal-400 bg-slate-700 shadow")
+                : (p === 'app-settings'
+                    ? "px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50 text-[11px] sm:text-xs font-semibold transition-all flex items-center"
+                    : "px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-300 hover:text-white");
         }
     });
 
@@ -469,7 +503,6 @@ function renderLeaderboard(containerId) {
             isAllFree ? 'bg-amber-50 border-amber-300 shadow-sm' : 'bg-slate-50 border-slate-200'
         }`;
 
-        // Opens detail modal on both Desktop and Mobile
         item.onclick = (e) => window.openDateDetailModal(dateStr, e);
 
         item.innerHTML = `
@@ -510,7 +543,7 @@ function updateSaveButtonState() {
     }
 }
 
-// Open Date Detail Modal (Works across Desktop and Mobile)
+// Open Date Detail Modal
 window.openDateDetailModal = function(dateStr, event = null) {
     if (event) event.stopPropagation();
 
@@ -551,10 +584,9 @@ window.openDateDetailModal = function(dateStr, event = null) {
         ? "w-full py-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 font-bold text-xs rounded-xl transition-all"
         : "w-full py-2 bg-teal-600 text-white hover:bg-teal-700 font-bold text-xs rounded-xl shadow transition-all";
 
-    // Auto-save user's response on click
     toggleBtn.onclick = async () => {
         window.toggleDateSelection(dateStr);
-        await window.submitFreeDays(); // Automatically save user's response for the day
+        await window.submitFreeDays();
         window.openDateDetailModal(dateStr);
     };
 
@@ -564,40 +596,6 @@ window.openDateDetailModal = function(dateStr, event = null) {
 window.closeDateDetailModal = function() {
     const modal = document.getElementById('date-detail-modal');
     if (modal) modal.classList.add('hidden');
-};
-
-// Global App Settings & Admin Portal Modal Handlers
-window.toggleSettingsModal = function(show) {
-    const modal = document.getElementById('settings-modal');
-    if (modal) modal.classList.toggle('hidden', !show);
-};
-
-window.clearUserLocalSession = function() {
-    localStorage.removeItem('dateMatch_savedUserName');
-    window.showToast("User session cleared from local storage.");
-};
-
-window.handleAdminSecretLogin = function(e) {
-    if (e && e.preventDefault) e.preventDefault();
-    const passcode = document.getElementById('admin-passcode-input')?.value.trim();
-    
-    // Sample secret admin passcode verification
-    if (passcode === 'admin123' || passcode === 'master2026') {
-        isAdminUnlocked = true;
-        const badge = document.getElementById('admin-status-badge');
-        if (badge) {
-            badge.innerText = 'Unlocked 🔓';
-            badge.className = 'text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md';
-        }
-        window.showToast("Admin access unlocked! Redirecting to Settings...");
-        window.toggleSettingsModal(false);
-        if (currentSecretCode && currentUserName) {
-            window.navigate('admin');
-        }
-    } else {
-        window.showToast("Incorrect Admin Passcode!");
-    }
-    return false;
 };
 
 function renderCalendar() {
@@ -672,12 +670,10 @@ function renderCalendar() {
         let avatarBadgesHtml = '';
         if (freeMembers.length > 0) {
             if (isCompactMode) {
-                // Mobile: 1 member avatar + inline +N count capsule on the SAME LINE with padding
                 const maxVisibleMobile = 1;
                 const visible = freeMembers.slice(0, maxVisibleMobile);
                 const overflowCount = freeMembers.length - maxVisibleMobile;
 
-                // Color themes matching day status
                 let counterThemeClass = "bg-slate-200 text-slate-700 font-bold";
                 if (isAllFree) {
                     counterThemeClass = "bg-amber-400 text-slate-900 font-extrabold";
@@ -706,7 +702,6 @@ function renderCalendar() {
                     </div>
                 `;
             } else {
-                // Desktop: Rounded rectangle badges with full name
                 let visibleCount = freeMembers.length;
                 let overflowCount = 0;
 
@@ -740,7 +735,6 @@ function renderCalendar() {
             }
         }
 
-        // Indicator Icon Logic
         let statusIndicator = '';
         if (isAllFree) {
             statusIndicator = isDraftSelected ? SVG_ICONS.checkSquareGold : SVG_ICONS.squareGold;
@@ -754,12 +748,10 @@ function renderCalendar() {
             statusIndicator = SVG_ICONS.square;
         }
 
-        // Today Tag: Rounded circle badge over date with white text
         const dateDisplayHtml = isTodayDate 
             ? `<span class="w-5 h-5 rounded-full bg-emerald-500 text-white font-extrabold text-xs flex items-center justify-center shadow-sm">${day}</span>`
             : `<span class="text-xs sm:text-sm font-bold ${isSubmittedResponse && isDraftSelected && !isAllFree ? 'text-white' : 'text-slate-800'}">${day}</span>`;
 
-        // Desktop bottom right detail view indicator arrow
         const detailIndicatorHtml = (!isCompactMode && freeMembers.length > 0)
             ? `<div onclick="window.openDateDetailModal('${dateStr}', event)" class="absolute bottom-1 right-1 opacity-40 hover:opacity-100">${SVG_ICONS.detailIcon}</div>`
             : '';
