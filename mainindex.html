@@ -26,12 +26,17 @@
             </div>
 
             <div id="nav-actions" class="flex items-center space-x-1.5 sm:space-x-3">
+                <!-- Event Navigation Tabs (3 event tabs) -->
                 <nav id="main-nav-tabs" class="flex bg-slate-800/80 p-0.5 sm:p-1 rounded-xl border border-slate-700/50 text-[11px] sm:text-xs font-semibold">
                     <button id="tab-calendar" onclick="navigate('calendar')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-teal-400 bg-slate-700 shadow"><i data-lucide="calendar" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> Calendar</span></button>
                     <button id="tab-list" onclick="navigate('list')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-300 hover:text-white"><i data-lucide="list" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> Members</span></button>
                     <button id="tab-admin" onclick="navigate('admin')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-300 hover:text-white"><i data-lucide="settings" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> Event Settings</span></button>
-                    <button id="tab-app-settings" onclick="navigate('app-settings')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-300 hover:text-white"><i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> App Settings</span></button>
                 </nav>
+
+                <!-- Standalone App Settings Button (Visible across all views) -->
+                <button id="tab-app-settings" onclick="navigate('app-settings')" class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/50 text-[11px] sm:text-xs font-semibold transition-all flex items-center" title="App Settings">
+                    <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> App Settings</span>
+                </button>
 
                 <div id="user-info-pill" class="hidden items-center gap-1.5 bg-slate-800 border border-slate-700 px-2 sm:px-3 py-1 rounded-xl">
                     <div id="user-avatar-initial" class="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-teal-500 text-slate-900 font-bold text-xs flex items-center justify-center">?</div>
