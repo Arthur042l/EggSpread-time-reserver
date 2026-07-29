@@ -19,6 +19,7 @@ Major Code Changes:
 - Every event have unique sub-pages from the login html (eg. eggspread-time-reserver/#0000) but with same layout
 - setting of the whole website:
   - login with Google to open admin platform for background settings...
+  - Clear storage of Remember Me
 
 Minor:
 - modify: more unify indicator and design of date boxes
