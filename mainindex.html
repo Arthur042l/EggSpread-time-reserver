@@ -16,17 +16,17 @@
     <header id="main-header" class="w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-700/60 sticky top-0 z-50 text-white">
         <div class="max-w-7xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-2">
             <div class="flex items-center space-x-2 sm:space-x-3 cursor-pointer" onclick="navigate('calendar')">
-                <div class="p-1.5 sm:p-2 bg-gradient-to-tr from-teal-400 to-emerald-400 text-slate-900 rounded-xl shadow font-bold">
-                    <i data-lucide="users" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                <div class="p-1.5 sm:p-2 rounded-xl shadow font-bold">
+                    <img src="material/AppIcon/V3px800.png" alt="DateMatch Icon" class="w-10 h-10"></img>
                 </div>
                 <div>
-                    <span class="font-bold text-base sm:text-lg bg-gradient-to-r from-teal-300 via-emerald-300 to-yellow-200 bg-clip-text text-transparent">DateMatch</span>
+                    <span class="font-bold text-base sm:text-lg brand-gradient">DateMatch</span>
                     <span id="header-event-badge" class="ml-1.5 text-[11px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-mono hidden sm:inline-block">--</span>
                 </div>
             </div>
 
             <div id="nav-actions" class="flex items-center space-x-2 sm:space-x-3">
-                <nav id="main-nav-tabs" class="hidden sm:flex items-center bg-slate-800/80 p-0.5 sm:p-1 rounded-xl border border-slate-700/50 text-[11px] sm:text-xs font-semibold space-x-0.5">
+                <nav id="main-nav-tabs" class="flex bg-slate-800/80 p-0.5 sm:p-1 rounded-xl border border-slate-700/50 text-[11px] sm:text-xs font-semibold">
                     <button id="tab-calendar" onclick="navigate('calendar')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-teal-400 bg-slate-700 shadow"><i data-lucide="calendar" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> Calendar</span></button>
                     <button id="tab-list" onclick="navigate('list')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-300 hover:text-white"><i data-lucide="list" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> Members</span></button>
                     <button id="tab-admin" onclick="navigate('admin')" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-slate-300 hover:text-white"><i data-lucide="settings" class="w-3.5 h-3.5 inline sm:mr-1"></i><span class="hidden sm:inline"> Settings</span></button>
@@ -67,7 +67,7 @@
 
                 <div id="register-extra-fields" class="hidden space-y-4 pt-2 border-t border-slate-100">
                     <div>
-                        <label class="block text-xs font-bold uppercase text-slate-600 mb-1"><i data-lucide="heading" class="w-3.5 h-3.5 inline text-teal-600"></i> Event Name</label>
+                        <label class="block text-xs font-bold uppercase text-slate-600 mb-1"><i data-lucide="pen-line" class="w-3.5 h-3.5 inline text-teal-600"></i> Event Name</label>
                         <input type="text" id="register-event-name" placeholder="e.g. Weekend BBQ Party" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-semibold">
                     </div>
                     <div>
@@ -78,7 +78,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1"><i data-lucide="user" class="w-3.5 h-3.5 inline text-teal-600"></i> Your Name</label>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1"><i data-lucide="user-round-pen" class="w-3.5 h-3.5 inline text-teal-600"></i> Your Name</label>
                     <input type="text" id="login-user-name" required placeholder="e.g. Alex Wong" class="w-full px-4 py-2.5 sm:py-3 bg-slate-50 border rounded-xl text-sm font-semibold focus:ring-2 focus:ring-teal-500">
                 </div>
 
@@ -260,16 +260,38 @@
                 <button onclick="toggleSettingsModal(false)" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
 
-            <div class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2 text-left">
+            
+            <div id="google-logged-out-view" class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2 text-left">
                 <div class="text-xs font-bold text-slate-800">Google Authentication</div>
-                <button type="button" onclick="signInWithGoogle()" class="w-full py-2.5 px-4 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24">
+                <button type="button" onclick="signInWithGoogle()" class="w-full py-2.5 px-4 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-2">
+                    <!-- Google Icon -->
+                    <svg class="w-5 h-5" viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                         <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                         <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                    </svg>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                    </svg>  
                     <span>Sign in with Google</span>
+                </button>
+            </div>
+
+            <!-- Logged In Profile View (Hidden by default) -->
+            <div id="google-logged-in-view" class="hidden p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-3 text-left">
+                <div class="text-xs font-bold text-slate-800">Account Profile</div>
+                <div class="flex items-center gap-3 p-2 bg-white border border-slate-200/80 rounded-xl">
+                    <img id="google-user-photo" src="" alt="Avatar" class="w-10 h-10 rounded-full object-cover border border-teal-500">
+                    <div class="overflow-hidden text-xs">
+                        <div id="google-user-name" class="font-bold text-slate-800 truncate">User Name</div>
+                        <div id="google-user-email" class="text-slate-500 truncate text-[11px]">user@example.com</div>
+                    </div>
+                </div>
+                <a href="/login-via-google.html">
+                    <button type="button" class="w-full py-2 bg-teal-50 hover:bg-teal-100 text-teal-600 border border-teal-200 font-bold text-xs rounded-xl transition-all">
+                        Open Admin Portal
+                    </button>
+                </a>
+                <button type="button" onclick="handleGoogleSignOut()" class="w-full py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold text-xs rounded-xl transition-all">
+                    Sign Out
                 </button>
             </div>
 
@@ -295,8 +317,8 @@
         <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border space-y-4 relative text-center">
             
             <div class="flex flex-col items-center space-y-2">
-                <div class="w-12 h-12 bg-gradient-to-tr from-teal-400 to-emerald-400 text-slate-900 rounded-2xl shadow-md flex items-center justify-center">
-                    <i data-lucide="users" class="w-6 h-6"></i>
+                <div class="w-12 h-12 rounded-2xl shadow-md flex items-center justify-center">
+                    <img src="material/AppIcon/V3px800.png" alt="DateMatch Icon" class="w-12 h-12"></img>
                 </div>
                 <div class="flex items-center gap-1.5">
                     <h3 class="text-lg font-bold text-slate-900">DateMatch</h3>
