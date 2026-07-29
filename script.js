@@ -34,7 +34,72 @@ try {
     console.warn("Firebase initialization warning:", err);
 }
 
-// Google Auth Handler (Authenticates with Google without overriding the user's custom input name)
+// Persistent Auth State Listener - automatically reads and restores saved Google account on load
+let authInitialized = false;
+
+function initAuthObserver() {
+    if (!auth) return;
+    
+    onAuthStateChanged(auth, (user) => {
+        // Update the Google Profile UI in App Settings whenever auth state changes or restores
+        updateGoogleProfileUI(user);
+
+        if (user) {
+            console.log("Auth restored for:", user.displayName || user.uid);
+        } else if (!authInitialized) {
+            // No saved Google session found on startup, fallback to anonymous sign-in
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                signInWithCustomToken(auth, __initial_auth_token).catch(() => signInAnonymously(auth));
+            } else {
+                signInAnonymously(auth).catch((err) => console.warn("Anon auth failed", err));
+            }
+        }
+        authInitialized = true;
+    });
+}
+
+// Call initAuthObserver() right after initializing `auth`
+try {
+    const firebaseConfig = (typeof __firebase_config !== 'undefined' && __firebase_config) 
+        ? JSON.parse(__firebase_config) 
+        : defaultFirebaseConfig;
+
+    if (firebaseConfig && firebaseConfig.apiKey && firebaseConfig.projectId) {
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+        
+        // Start listening to persistent storage auth changes immediately
+        initAuthObserver();
+    }
+} catch (err) {
+    console.warn("Firebase initialization warning:", err);
+}
+
+
+// Dynamically updates App Settings Modal to display Google profile card or Sign-In button
+function updateGoogleProfileUI(user) {
+    const loggedOutView = document.getElementById('google-logged-out-view');
+    const loggedInView = document.getElementById('google-logged-in-view');
+    const photoEl = document.getElementById('google-user-photo');
+    const nameEl = document.getElementById('google-user-name');
+    const emailEl = document.getElementById('google-user-email');
+
+    const isGoogleUser = user && !user.isAnonymous && user.providerData && user.providerData.some(p => p.providerId === 'google.com');
+
+    if (isGoogleUser) {
+        if (loggedOutView) loggedOutView.classList.add('hidden');
+        if (loggedInView) loggedInView.classList.remove('hidden');
+        if (photoEl) photoEl.src = user.photoURL || 'material/pinguVibeCode.png';
+        if (nameEl) nameEl.innerText = user.displayName || 'Google User';
+        if (emailEl) emailEl.innerText = user.email || '';
+    } else {
+        if (loggedOutView) loggedOutView.classList.remove('hidden');
+        if (loggedInView) loggedInView.classList.add('hidden');
+    }
+}
+
+// Google Auth Handler (Authenticates with Google without overriding user's custom name)
 window.signInWithGoogle = async function() {
     if (!auth) {
         window.showToast("Firebase Authentication not initialized.");
@@ -53,12 +118,26 @@ window.signInWithGoogle = async function() {
                 nameEl.value = googleName;
             }
             
-            window.showToast(`Google authenticated as ${googleName}`);
-            window.toggleSettingsModal(false);
+            updateGoogleProfileUI(user);
+            window.showToast(`Authenticated as ${googleName}`);
         }
     } catch (err) {
         console.error("Google Auth error:", err);
         window.showToast(`Google Auth error: ${err.message || 'Failed'}`);
+    }
+};
+
+// Sign out from Google Account
+window.handleGoogleSignOut = async function() {
+    if (!auth) return;
+    try {
+        await signOut(auth);
+        window.showToast("Signed out of Google account.");
+        updateGoogleProfileUI(null);
+        await signInAnonymously(auth);
+    } catch (err) {
+        console.error("Google Sign-Out error:", err);
+        window.showToast(`Sign out error: ${err.message || 'Failed'}`);
     }
 };
 
