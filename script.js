@@ -100,6 +100,7 @@ let submittedDates = new Set();
 let calCurrentDate = new Date();
 let eventUnsubscribe = null;
 let isRegisterMode = false;
+let isAdminUnlocked = false;
 
 // Fast inline SVGs
 const SVG_ICONS = {
@@ -563,6 +564,40 @@ window.openDateDetailModal = function(dateStr, event = null) {
 window.closeDateDetailModal = function() {
     const modal = document.getElementById('date-detail-modal');
     if (modal) modal.classList.add('hidden');
+};
+
+// Global App Settings & Admin Portal Modal Handlers
+window.toggleSettingsModal = function(show) {
+    const modal = document.getElementById('settings-modal');
+    if (modal) modal.classList.toggle('hidden', !show);
+};
+
+window.clearUserLocalSession = function() {
+    localStorage.removeItem('dateMatch_savedUserName');
+    window.showToast("User session cleared from local storage.");
+};
+
+window.handleAdminSecretLogin = function(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const passcode = document.getElementById('admin-passcode-input')?.value.trim();
+    
+    // Sample secret admin passcode verification
+    if (passcode === 'admin123' || passcode === 'master2026') {
+        isAdminUnlocked = true;
+        const badge = document.getElementById('admin-status-badge');
+        if (badge) {
+            badge.innerText = 'Unlocked 🔓';
+            badge.className = 'text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md';
+        }
+        window.showToast("Admin access unlocked! Redirecting to Settings...");
+        window.toggleSettingsModal(false);
+        if (currentSecretCode && currentUserName) {
+            window.navigate('admin');
+        }
+    } else {
+        window.showToast("Incorrect Admin Passcode!");
+    }
+    return false;
 };
 
 function renderCalendar() {
