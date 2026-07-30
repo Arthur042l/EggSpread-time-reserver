@@ -28,15 +28,31 @@ const defaultFirebaseConfig = {
     measurementId: "G-LLG556KH52"
 };
 
+// List of admin Google UIDs that are authorized
+const ADMIN_UIDS = [
+    "zGEBC62mZQQLS1gv5c125CrQJXr2",
+    "YOUR_GOOGLE_FIREBASE_UID_2"
+];
+
+// Helper function to check if the current Google user is an authorized admin by UID
+function isVerifiedUser(user) {
+    if (!user || user.isAnonymous) return false;
+    
+    // Check if user's UID exists in your admin array
+    return ADMIN_UIDS.includes(user.uid);
+}
+
 let authInitialized = false;
 
-// Dynamically updates App Settings Modal to display Google profile card or Sign-In button
 function updateGoogleProfileUI(user) {
     const loggedOutView = document.getElementById('google-logged-out-view');
     const loggedInView = document.getElementById('google-logged-in-view');
     const photoEl = document.getElementById('google-user-photo');
     const nameEl = document.getElementById('google-user-name');
     const emailEl = document.getElementById('google-user-email');
+    
+    // Get the Admin Portal link element in index.html
+    const adminPortalBtn = document.getElementById('admin-portal-btn');
 
     const isGoogleUser = user && !user.isAnonymous && user.providerData && user.providerData.some(p => p.providerId === 'google.com');
 
@@ -46,13 +62,22 @@ function updateGoogleProfileUI(user) {
         if (photoEl) photoEl.src = user.photoURL || 'material/pinguVibeCode.png';
         if (nameEl) nameEl.innerText = user.displayName || 'Google User';
         if (emailEl) emailEl.innerText = user.email || '';
+
+        // Check UID verification
+        if (adminPortalBtn) {
+            if (isVerifiedUser(user)) {
+                adminPortalBtn.classList.remove('hidden'); // Show button for verified UID
+            } else {
+                adminPortalBtn.classList.add('hidden');    // Hide button for unauthorized UID
+            }
+        }
     } else {
         if (loggedOutView) loggedOutView.classList.remove('hidden');
         if (loggedInView) loggedInView.classList.add('hidden');
     }
 }
 
-// Persistent Auth Observer - Automatically restores Google session from browser storage
+// Persistent Auth Observer - Automatically restores Google session from browser storage on load
 function initAuthObserver() {
     if (!auth) return;
     
@@ -60,7 +85,7 @@ function initAuthObserver() {
         updateGoogleProfileUI(user);
 
         if (!user && !authInitialized) {
-            // No saved Google session found on startup, fallback to custom or anonymous sign-in
+            // No saved session found on startup, fallback to custom token or anonymous sign-in
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                 signInWithCustomToken(auth, __initial_auth_token).catch(() => signInAnonymously(auth));
             } else {
@@ -87,7 +112,7 @@ try {
     console.warn("Firebase initialization warning:", err);
 }
 
-// Google Auth Handler (Preserves user's custom input name)
+// Google Auth Handler (Preserves user's custom input name if already entered)
 window.signInWithGoogle = async function() {
     if (!auth) {
         window.showToast("Firebase Authentication not initialized.");
@@ -108,6 +133,7 @@ window.signInWithGoogle = async function() {
             
             updateGoogleProfileUI(user);
             window.showToast(`Authenticated as ${googleName}`);
+            console.log("My UID:", user.uid);
         }
     } catch (err) {
         console.error("Google Auth error:", err);
@@ -129,10 +155,17 @@ window.handleGoogleSignOut = async function() {
     }
 };
 
-// Clear saved user local session
+// Clear saved user local session & remember me preference
 window.clearUserLocalSession = function() {
     localStorage.removeItem('dateMatch_savedUserName');
-    window.showToast("Local user session cleared!");
+    localStorage.removeItem('dateMatch_rememberMe');
+    
+    const nameEl = document.getElementById('login-user-name');
+    const remBox = document.getElementById('remember-me-checkbox');
+    if (nameEl) nameEl.value = '';
+    if (remBox) remBox.checked = false;
+
+    window.showToast("Local user session & preferences cleared!");
 };
 
 // App Settings Modal Toggle
@@ -346,8 +379,10 @@ window.handleLoginSubmit = async function(e) {
 
     if (rememberMe) {
         localStorage.setItem('dateMatch_savedUserName', nameInput);
+        localStorage.setItem('dateMatch_rememberMe', 'true');
     } else {
         localStorage.removeItem('dateMatch_savedUserName');
+        localStorage.removeItem('dateMatch_rememberMe');
     }
 
     currentSecretCode = codeInput;
@@ -427,9 +462,6 @@ window.logout = function() {
     submittedDates.clear();
 
     window.setAuthMode('join');
-
-    const remBox = document.getElementById('remember-me-checkbox');
-    if (remBox) remBox.checked = false;
 
     window.navigate('login');
 };
@@ -1031,16 +1063,20 @@ window.onload = function() {
     checkDeviceMode();
 
     const remBox = document.getElementById('remember-me-checkbox');
-    if (remBox) remBox.checked = false;
-
+    const isRemembered = localStorage.getItem('dateMatch_rememberMe') === 'true';
     const savedName = localStorage.getItem('dateMatch_savedUserName');
-    if (savedName) {
+
+    if (remBox) {
+        remBox.checked = isRemembered;
+    }
+
+    if (isRemembered && savedName) {
         const nameEl = document.getElementById('login-user-name');
         if (nameEl) {
             nameEl.value = savedName;
-            if (remBox) remBox.checked = true;
         }
     }
+
     ensureAuthenticated();
     window.navigate('login');
 };
