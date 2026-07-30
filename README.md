@@ -3,7 +3,7 @@ A tool for who often not matching hang out time with Friends.
 
 Link to Web App:
 
-https://arthur042l.github.io/EggSpread-time-reserver/
+https://arthur042l.github.io/dansan-time-reserver/
 
 ## Task:
 
