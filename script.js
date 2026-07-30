@@ -1,5 +1,13 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-import { getAuth, signInAnonymously, signInWithCustomToken, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+import { 
+    getAuth, 
+    signInAnonymously, 
+    signInWithCustomToken, 
+    signInWithPopup, 
+    GoogleAuthProvider, 
+    signOut, 
+    onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 // Safe Firebase Initialization
@@ -20,62 +28,7 @@ const defaultFirebaseConfig = {
     measurementId: "G-LLG556KH52"
 };
 
-try {
-    const firebaseConfig = (typeof __firebase_config !== 'undefined' && __firebase_config) 
-        ? JSON.parse(__firebase_config) 
-        : defaultFirebaseConfig;
-
-    if (firebaseConfig && firebaseConfig.apiKey && firebaseConfig.projectId) {
-        app = initializeApp(firebaseConfig);
-        auth = getAuth(app);
-        db = getFirestore(app);
-    }
-} catch (err) {
-    console.warn("Firebase initialization warning:", err);
-}
-
-// Persistent Auth State Listener - automatically reads and restores saved Google account on load
 let authInitialized = false;
-
-function initAuthObserver() {
-    if (!auth) return;
-    
-    onAuthStateChanged(auth, (user) => {
-        // Update the Google Profile UI in App Settings whenever auth state changes or restores
-        updateGoogleProfileUI(user);
-
-        if (user) {
-            console.log("Auth restored for:", user.displayName || user.uid);
-        } else if (!authInitialized) {
-            // No saved Google session found on startup, fallback to anonymous sign-in
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                signInWithCustomToken(auth, __initial_auth_token).catch(() => signInAnonymously(auth));
-            } else {
-                signInAnonymously(auth).catch((err) => console.warn("Anon auth failed", err));
-            }
-        }
-        authInitialized = true;
-    });
-}
-
-// Call initAuthObserver() right after initializing `auth`
-try {
-    const firebaseConfig = (typeof __firebase_config !== 'undefined' && __firebase_config) 
-        ? JSON.parse(__firebase_config) 
-        : defaultFirebaseConfig;
-
-    if (firebaseConfig && firebaseConfig.apiKey && firebaseConfig.projectId) {
-        app = initializeApp(firebaseConfig);
-        auth = getAuth(app);
-        db = getFirestore(app);
-        
-        // Start listening to persistent storage auth changes immediately
-        initAuthObserver();
-    }
-} catch (err) {
-    console.warn("Firebase initialization warning:", err);
-}
-
 
 // Dynamically updates App Settings Modal to display Google profile card or Sign-In button
 function updateGoogleProfileUI(user) {
@@ -99,7 +52,42 @@ function updateGoogleProfileUI(user) {
     }
 }
 
-// Google Auth Handler (Authenticates with Google without overriding user's custom name)
+// Persistent Auth Observer - Automatically restores Google session from browser storage
+function initAuthObserver() {
+    if (!auth) return;
+    
+    onAuthStateChanged(auth, (user) => {
+        updateGoogleProfileUI(user);
+
+        if (!user && !authInitialized) {
+            // No saved Google session found on startup, fallback to custom or anonymous sign-in
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                signInWithCustomToken(auth, __initial_auth_token).catch(() => signInAnonymously(auth));
+            } else {
+                signInAnonymously(auth).catch((err) => console.warn("Anon auth failed", err));
+            }
+        }
+        authInitialized = true;
+    });
+}
+
+try {
+    const firebaseConfig = (typeof __firebase_config !== 'undefined' && __firebase_config) 
+        ? JSON.parse(__firebase_config) 
+        : defaultFirebaseConfig;
+
+    if (firebaseConfig && firebaseConfig.apiKey && firebaseConfig.projectId) {
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+        
+        initAuthObserver();
+    }
+} catch (err) {
+    console.warn("Firebase initialization warning:", err);
+}
+
+// Google Auth Handler (Preserves user's custom input name)
 window.signInWithGoogle = async function() {
     if (!auth) {
         window.showToast("Firebase Authentication not initialized.");
@@ -152,8 +140,13 @@ window.toggleSettingsModal = function(show) {
     const modal = document.getElementById('settings-modal');
     if (modal) {
         modal.classList.toggle('hidden', !show);
-        if (show && window.lucide) {
-            window.lucide.createIcons();
+        if (show) {
+            if (auth && auth.currentUser) {
+                updateGoogleProfileUI(auth.currentUser);
+            }
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
         }
     }
 };
@@ -181,31 +174,22 @@ window.addEventListener('resize', () => {
     }
 });
 
-// Authentication Initialization
-let authPromise = null;
+// Ensures authentication helper
 function ensureAuthenticated() {
     if (!auth) return Promise.resolve(false);
-    if (auth.currentUser) return Promise.resolve(true);
+    if (auth.currentUser) {
+        updateGoogleProfileUI(auth.currentUser);
+        return Promise.resolve(true);
+    }
     
-    if (!authPromise) {
-        authPromise = new Promise((resolve) => {
-            const unsubscribe = onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    unsubscribe();
-                    resolve(true);
-                }
-            });
-
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                signInWithCustomToken(auth, __initial_auth_token).catch(() => {
-                    signInAnonymously(auth).catch(() => resolve(false));
-                });
-            } else {
-                signInAnonymously(auth).catch(() => resolve(false));
+    return new Promise((resolve) => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                unsubscribe();
+                resolve(true);
             }
         });
-    }
-    return authPromise;
+    });
 }
 
 // Resolve Doc Ref Path
