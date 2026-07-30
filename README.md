@@ -1,4 +1,4 @@
-# dansan-time-reserver (蛋散預約器）
+# dansan-time-reserver (DateMatch / 蛋散預約器）
 A tool for who often not matching hang out time with Friends.
 
 Link to Web App:
