@@ -1,0 +1,34 @@
+<h1 id="title"></h1>
+<p id="description"></p>
+
+<script>
+// window.location.hash returns "#/fruits/apple"
+    const hashPath = window.location.hash.replace('#/', ''); // "fruits/apple"
+    const parts = hashPath.split('/');                      // ["fruits", "apple"]
+
+    const code = parts[0]; // "fruits"
+    
+  
+  // 2. Create your unique data database
+  const database = {
+    1234: { title: "1234event", desc: "Red and sweet fruit." },
+    5678: { title: "5678event", desc: "Yellow and long fruit." }
+  };
+
+  // 3. Put the data into the same layout
+  if (database[code]) {
+    document.getElementById('title').innerText = database[code].title;
+    document.getElementById('description').innerText = database[code].desc;
+  } else {
+    document.getElementById('title').innerText = "Item not found";
+  }
+    
+
+
+</script>
+
+<a href="link.html?item=1234">Open Apple</a>
+<a href="link.html#/5678">Open Banana</a>
+<a href="link.html#/1234">Open Apple</a>
+
+

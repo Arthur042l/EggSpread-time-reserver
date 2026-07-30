@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DateMatch - Admin Platform</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="./material/AppIcon/V3px400.png">
+</head>
+<body class="bg-custom-gradient min-h-screen text-slate-800 font-sans antialiased pb-12">
+
+    <!-- Sticky Header -->
+    <header class="w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-700/60 sticky top-0 z-50 text-white">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="window.location.href='index.html'">
+                <div class="p-1 rounded-xl shadow font-bold">
+                    <img src="./material/AppIcon/V3px800.png" alt="DateMatch Icon" class="w-9 h-9" onerror="this.style.display='none'">
+                </div>
+                <div>
+                    <span class="font-bold text-lg bg-gradient-to-r from-teal-300 via-emerald-300 to-yellow-200 bg-clip-text text-transparent">DateMatch Admin</span>
+                    <span class="ml-2 text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">Master Dashboard</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    <span>Back to Calendar</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 pt-6 space-y-6">
+
+        <!-- Stat Cards Bar -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white/90 backdrop-blur-xl p-4 sm:p-5 rounded-2xl shadow-xl border border-white/50 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Events</p>
+                    <h3 id="stat-total-events" class="text-2xl font-black text-slate-900 mt-1">0</h3>
+                </div>
+                <div class="p-3 bg-teal-500/10 text-teal-600 rounded-2xl">
+                    <i data-lucide="calendar" class="w-6 h-6"></i>
+                </div>
+            </div>
+
+            <div class="bg-white/90 backdrop-blur-xl p-4 sm:p-5 rounded-2xl shadow-xl border border-white/50 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Responders</p>
+                    <h3 id="stat-total-responders" class="text-2xl font-black text-emerald-600 mt-1">0</h3>
+                </div>
+                <div class="p-3 bg-emerald-500/10 text-emerald-600 rounded-2xl">
+                    <i data-lucide="users" class="w-6 h-6"></i>
+                </div>
+            </div>
+
+            <div class="bg-white/90 backdrop-blur-xl p-4 sm:p-5 rounded-2xl shadow-xl border border-white/50 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Match Goals</p>
+                    <h3 id="stat-avg-goal" class="text-2xl font-black text-amber-600 mt-1">0</h3>
+                </div>
+                <div class="p-3 bg-amber-500/10 text-amber-600 rounded-2xl">
+                    <i data-lucide="target" class="w-6 h-6"></i>
+                </div>
+            </div>
+
+            <div class="bg-white/90 backdrop-blur-xl p-4 sm:p-5 rounded-2xl shadow-xl border border-white/50 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Database Status</p>
+                    <h3 id="stat-db-status" class="text-xs font-bold text-emerald-600 mt-2 flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Connected
+                    </h3>
+                </div>
+                <div class="p-3 bg-indigo-500/10 text-indigo-600 rounded-2xl">
+                    <i data-lucide="database" class="w-6 h-6"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Bar & Controls -->
+        <div class="bg-white/90 backdrop-blur-xl p-4 rounded-2xl shadow-xl border border-white/50 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="relative w-full sm:w-80">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+                <input type="text" id="admin-search-input" oninput="filterEvents()" placeholder="Search by name or code..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border rounded-xl text-xs font-semibold focus:ring-2 focus:ring-teal-500 outline-none">
+            </div>
+
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button onclick="exportAllDatabaseJSON()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl border flex items-center gap-1.5 transition-all">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i> Export All Database
+                </button>
+            </div>
+        </div>
+
+        <!-- Events Grid -->
+        <div id="events-grid-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="col-span-full py-12 text-center text-slate-400 text-sm font-semibold flex flex-col items-center gap-2">
+                <div class="w-6 h-6 border-2 border-teal-400 border-t-transparent rounded-full animate-spin"></div>
+                <span>Verifying admin permissions & loading database...</span>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- EVENT INSPECT / EDIT MODAL -->
+    <div id="event-inspect-modal" onclick="if(event.target === this) closeInspectModal()" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border space-y-5 relative max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b pb-3">
+                <div>
+                    <h3 id="inspect-event-name" class="text-lg font-black text-slate-900">Event Title</h3>
+                    <span id="inspect-event-code" class="text-xs font-mono font-bold px-2 py-0.5 bg-teal-100 text-teal-800 rounded-lg">CODE</span>
+                </div>
+                <button onclick="closeInspectModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <!-- Edit Details Form -->
+            <form onsubmit="handleAdminUpdateEvent(event)" class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                <h4 class="text-xs font-extrabold uppercase text-slate-500">Edit Event Settings</h4>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Event Name</label>
+                        <input type="text" id="inspect-edit-name" required class="w-full px-3 py-1.5 bg-white border rounded-xl text-xs font-semibold">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 mb-1">Expected Goal</label>
+                        <input type="number" id="inspect-edit-goal" min="1" max="50" required class="w-full px-3 py-1.5 bg-white border rounded-xl text-xs font-bold">
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow transition-all">Save Changes</button>
+            </form>
+
+            <!-- Members List -->
+            <div class="space-y-2">
+                <h4 class="text-xs font-extrabold uppercase text-slate-500">Responded Members (<span id="inspect-member-count">0</span>)</h4>
+                <div id="inspect-members-list" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+            </div>
+
+            <div class="pt-3 border-t flex items-center justify-between gap-2">
+                <button id="inspect-delete-btn" class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl border border-red-200 transition-all flex items-center gap-1">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete Event
+                </button>
+                <button onclick="closeInspectModal()" class="px-4 py-2 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-slate-800 transition-all">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOM CONFIRMATION DELETE MODAL -->
+    <div id="confirm-delete-modal" onclick="if(event.target === this) closeConfirmDeleteModal()" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border space-y-4 text-center">
+            <div class="w-12 h-12 bg-red-100 text-red-600 rounded-2xl mx-auto flex items-center justify-center">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-slate-900">Delete Event?</h3>
+                <p class="text-xs text-slate-500 mt-1">Are you sure you want to permanently delete event <strong id="delete-event-code-display" class="font-mono text-slate-800">--</strong>? This action cannot be undone.</p>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="closeConfirmDeleteModal()" class="flex-1 py-2.5 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-200">Cancel</button>
+                <button id="confirm-delete-submit-btn" class="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-md">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 px-4 py-3 bg-slate-900 text-white text-xs font-semibold rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-2 transition-all transform translate-y-16 opacity-0 pointer-events-none z-50">
+        <i data-lucide="info" class="w-4 h-4 text-teal-400"></i>
+        <span id="toast-msg">Notification</span>
+    </div>
+
+    <!-- Firebase SDK Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+        import { getFirestore, collection, doc, onSnapshot, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        const defaultFirebaseConfig = {
+            apiKey: "AIzaSyDm0L6F6CGmrbsESTMLhOek74a5ttySP04",
+            authDomain: "eggspread-time-reserver.firebaseapp.com",
+            projectId: "eggspread-time-reserver",
+            storageBucket: "eggspread-time-reserver.firebasestorage.app",
+            messagingSenderId: "792367749553",
+            appId: "1:792367749553:web:365c504ae65ccc7fcf4590",
+            measurementId: "G-LLG556KH52"
+        };
+
+        const firebaseConfig = (typeof __firebase_config !== 'undefined' && __firebase_config) 
+            ? JSON.parse(__firebase_config) 
+            : defaultFirebaseConfig;
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let allEventsMap = {};
+        let activeInspectCode = null;
+
+        // List of authorized Admin Google UIDs (Add your Google UID here)
+        const ADMIN_UIDS = [
+            // "INSERT_YOUR_GOOGLE_UID_HERE"
+        ];
+
+        // Verification Check Helper
+        function isVerifiedAdmin(user) {
+            if (!user || user.isAnonymous) return false;
+            const isGoogleUser = user.providerData && user.providerData.some(p => p.providerId === 'google.com');
+            
+            // If ADMIN_UIDS array has UIDs listed, verify user.uid exists in the array
+            if (ADMIN_UIDS.length > 0) {
+                return isGoogleUser && ADMIN_UIDS.includes(user.uid);
+            }
+            // Default check: Signed in with Google
+            return isGoogleUser;
+        }
+
+        // Route Guard: Detects user verification state on page load and redirects if unauthorized
+        function verifyAdminAndRedirect() {
+            return new Promise((resolve) => {
+                const unsubscribe = onAuthStateChanged(auth, (user) => {
+                    unsubscribe();
+                    if (!isVerifiedAdmin(user)) {
+                        showToast("Unauthorized: Google Admin login required. Redirecting...");
+                        setTimeout(() => {
+                            window.location.href = "index.html";
+                        }, 1500);
+                        resolve(null);
+                    } else {
+                        resolve(user);
+                    }
+                });
+            });
+        }
+
+        // Real-time Database Listener for Events Collection
+        async function initRealtimeEvents() {
+            const eventsColRef = collection(db, 'artifacts', appId, 'public', 'data', 'events');
+
+            onSnapshot(eventsColRef, (snapshot) => {
+                allEventsMap = {};
+                snapshot.forEach(docSnap => {
+                    allEventsMap[docSnap.id] = docSnap.data();
+                });
+                renderAdminDashboard();
+            }, (error) => {
+                console.error("Firestore Snapshot Error:", error);
+                showToast("Failed to load events from database.");
+            });
+        }
+
+        function renderAdminDashboard() {
+            const keys = Object.keys(allEventsMap);
+            let totalResponders = 0;
+            let totalGoal = 0;
+
+            keys.forEach(k => {
+                const ev = allEventsMap[k];
+                totalResponders += Object.keys(ev.responses || {}).length;
+                totalGoal += (ev.groupSize || 5);
+            });
+
+            document.getElementById('stat-total-events').innerText = keys.length;
+            document.getElementById('stat-total-responders').innerText = totalResponders;
+            document.getElementById('stat-avg-goal').innerText = keys.length ? Math.round(totalGoal / keys.length) : 0;
+
+            filterEvents();
+            if (window.lucide) window.lucide.createIcons();
+        }
+
+        window.filterEvents = function() {
+            const query = (document.getElementById('admin-search-input')?.value || '').trim().toLowerCase();
+            const container = document.getElementById('events-grid-container');
+            container.innerHTML = '';
+
+            const filteredKeys = Object.keys(allEventsMap).filter(k => {
+                const ev = allEventsMap[k];
+                const name = (ev.name || '').toLowerCase();
+                const code = (ev.code || k).toLowerCase();
+                return name.includes(query) || code.includes(query);
+            });
+
+            if (filteredKeys.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full py-12 text-center text-slate-400 text-xs font-medium italic">
+                        No matching events found in database.
+                    </div>
+                `;
+                return;
+            }
+
+            filteredKeys.forEach(k => {
+                const ev = allEventsMap[k];
+                const responses = ev.responses || {};
+                const responderCount = Object.keys(responses).length;
+                const groupGoal = ev.groupSize || 5;
+
+                const card = document.createElement('div');
+                card.className = "bg-white/90 backdrop-blur-xl p-5 rounded-3xl shadow-xl border border-white/50 space-y-4 flex flex-col justify-between";
+                
+                card.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <h3 class="font-black text-base text-slate-900 line-clamp-1">${ev.name || 'Untitled Event'}</h3>
+                                <p class="text-[11px] text-slate-500 mt-0.5">Expected: <strong class="text-slate-800">${groupGoal}</strong></p>
+                            </div>
+                            <span class="text-xs font-mono font-bold bg-teal-100 text-teal-800 px-2.5 py-1 rounded-xl border border-teal-200">
+                                ${ev.code || k}
+                            </span>
+                        </div>
+
+                        <div class="p-3 bg-slate-50 border rounded-2xl space-y-1">
+                            <div class="flex justify-between text-xs font-semibold">
+                                <span class="text-slate-600">Submissions</span>
+                                <span class="text-teal-600 font-bold">${responderCount} / ${groupGoal}</span>
+                            </div>
+                            <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                                <div class="bg-teal-500 h-full rounded-full" style="width: ${Math.min(100, Math.round((responderCount / groupGoal) * 100))}%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t flex items-center justify-between gap-2">
+                        <button onclick="openInspectModal('${ev.code || k}')" class="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold text-xs rounded-xl border border-teal-200 transition-all flex items-center gap-1">
+                            <i data-lucide="eye" class="w-3.5 h-3.5"></i> Inspect
+                        </button>
+                        <button onclick="exportSingleEventJSON('${ev.code || k}')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border transition-all flex items-center gap-1">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i> JSON
+                        </button>
+                        <button onclick="triggerDeleteEvent('${ev.code || k}')" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl border border-red-200 transition-all flex items-center gap-1">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            if (window.lucide) window.lucide.createIcons();
+        };
+
+        window.openInspectModal = function(code) {
+            const ev = allEventsMap[code];
+            if (!ev) return;
+
+            activeInspectCode = code;
+            document.getElementById('inspect-event-name').innerText = ev.name || code;
+            document.getElementById('inspect-event-code').innerText = ev.code || code;
+            document.getElementById('inspect-edit-name').value = ev.name || '';
+            document.getElementById('inspect-edit-goal').value = ev.groupSize || 5;
+
+            const responses = ev.responses || {};
+            const members = Object.keys(responses);
+            document.getElementById('inspect-member-count').innerText = members.length;
+
+            const listContainer = document.getElementById('inspect-members-list');
+            listContainer.innerHTML = '';
+
+            if (members.length === 0) {
+                listContainer.innerHTML = `<p class="text-xs text-slate-400 italic py-3 text-center">No member responses submitted yet.</p>`;
+            } else {
+                members.forEach(m => {
+                    const dates = responses[m] || [];
+                    const div = document.createElement('div');
+                    div.className = "p-2.5 bg-slate-50 border rounded-xl flex items-center justify-between text-xs";
+                    div.innerHTML = `
+                        <span class="font-bold text-slate-800">${m}</span>
+                        <span class="font-mono text-teal-600 font-bold px-2 py-0.5 bg-teal-50 rounded-md border">${dates.length} days free</span>
+                    `;
+                    listContainer.appendChild(div);
+                });
+            }
+
+            document.getElementById('inspect-delete-btn').onclick = () => window.triggerDeleteEvent(code);
+            document.getElementById('event-inspect-modal').classList.remove('hidden');
+        };
+
+        window.closeInspectModal = function() {
+            document.getElementById('event-inspect-modal').classList.add('hidden');
+        };
+
+        window.handleAdminUpdateEvent = async function(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            if (!activeInspectCode || !allEventsMap[activeInspectCode]) return false;
+
+            const newName = document.getElementById('inspect-edit-name').value.trim();
+            const newGoal = parseInt(document.getElementById('inspect-edit-goal').value, 10);
+
+            if (!newName || isNaN(newGoal)) return false;
+
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', activeInspectCode);
+            await setDoc(docRef, {
+                ...allEventsMap[activeInspectCode],
+                name: newName,
+                groupSize: newGoal
+            }, { merge: true });
+
+            showToast(`Updated event ${activeInspectCode} successfully.`);
+            closeInspectModal();
+            return false;
+        };
+
+        window.triggerDeleteEvent = function(code) {
+            activeInspectCode = code;
+            document.getElementById('delete-event-code-display').innerText = code;
+            document.getElementById('confirm-delete-submit-btn').onclick = () => executeDeleteEvent(code);
+            document.getElementById('confirm-delete-modal').classList.remove('hidden');
+        };
+
+        window.closeConfirmDeleteModal = function() {
+            document.getElementById('confirm-delete-modal').classList.add('hidden');
+        };
+
+        async function executeDeleteEvent(code) {
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'events', code);
+                await deleteDoc(docRef);
+                showToast(`Deleted event ${code} from database.`);
+                closeConfirmDeleteModal();
+                closeInspectModal();
+            } catch (err) {
+                console.error("Delete Error:", err);
+                showToast("Failed to delete event.");
+            }
+        }
+
+        window.exportSingleEventJSON = function(code) {
+            const ev = allEventsMap[code];
+            if (!ev) return;
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ [code]: ev }, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `DateMatch_Admin_Export_${code}.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        };
+
+        window.exportAllDatabaseJSON = function() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(allEventsMap, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `DateMatch_Full_Database_Backup.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+            showToast("Full database backup exported!");
+        };
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('translate-y-16', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-16', 'opacity-0');
+            }, 3500);
+        }
+
+        window.onload = async function() {
+            if (window.lucide) window.lucide.createIcons();
+            
+            // Step 1: Run authentication & verification check on page load
+            const verifiedUser = await verifyAdminAndRedirect();
+            
+            // Step 2: Initialize real-time dashboard only if user passes verification
+            if (verifiedUser) {
+                initRealtimeEvents();
+            }
+        };
+    </script>
+</body>
+</html>
