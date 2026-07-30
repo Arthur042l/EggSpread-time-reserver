@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Google Sign-In Integration</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 min-h-screen text-slate-100 flex items-center justify-center p-4">
+
+    <div class="max-w-md w-full bg-slate-800/90 backdrop-blur-xl border border-slate-700 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+    <!--
+        <! -- Title Header -- >
+        <div class="text-center space-y-2">
+            <div class="inline-flex p-3 bg-teal-500/10 text-teal-400 rounded-2xl mb-1">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457-.39-2.823-1.07-4"></path>
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-white">Firebase Google Auth</h1>
+            <p class="text-xs text-slate-400">Example integration for Google Sign-In</p>
+        </div>
+    -->
+
+        <!-- Logged Out State (Shown when no user is signed in) -->
+        <div id="logged-out-state" class="space-y-4">
+            <button id="google-login-btn" onclick="signInWithGoogle()" class="w-full py-3 px-4 bg-white hover:bg-slate-100 text-slate-800 font-bold rounded-xl shadow-lg flex items-center justify-center gap-3 transition-all transform hover:scale-[1.02]">
+                <!-- Google G Logo -->
+                <svg class="w-5 h-5" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>    
+                <span>Sign in with Google</span>
+            </button>
+
+        </div>
+
+        <!-- Logged In State (Hidden by default) -->
+        <div id="logged-in-state" class="hidden space-y-4">
+            <div class="p-4 bg-slate-900/80 border border-slate-700/60 rounded-2xl flex items-center gap-3">
+                <img id="user-photo" src="" alt="User Avatar" class="w-12 h-12 rounded-full border border-teal-500">
+                <div class="overflow-hidden">
+                    <h3 id="user-name" class="text-sm font-bold text-white truncate">User Name</h3>
+                    <p id="user-email" class="text-xs text-slate-400 truncate">user@example.com</p>
+                </div>
+            </div>
+
+            <div class="p-3 bg-slate-900/50 border border-slate-700/40 rounded-xl space-y-1">
+                <span class="text-[10px] uppercase font-bold text-teal-400 tracking-wider">Your Firebase UID</span>
+                <p id="user-uid" class="text-xs font-mono text-slate-300 break-all select-all">--</p>
+            </div>
+
+            <button onclick="handleSignOut()" class="w-full py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 font-semibold text-xs rounded-xl transition-all">
+                Sign Out
+            </button>
+        </div>
+
+        <!--
+        <! -- Status / Toast Output -- >
+        <div id="status-msg" class="text-center text-xs text-slate-400 font-medium italic">
+            Ready to sign in.
+        </div>
+        -->
+    </div>
+
+    <!-- Firebase JS SDK v12 Modular Import -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+        import { 
+            getAuth, 
+            GoogleAuthProvider, 
+            signInWithPopup, 
+            signOut, 
+            onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+
+        // 1. Replace with your actual Firebase Web App configuration credentials
+        const firebaseConfig = {
+            apiKey: "AIzaSyDm0L6F6CGmrbsESTMLhOek74a5ttySP04",
+            authDomain: "eggspread-time-reserver.firebaseapp.com",
+            projectId: "eggspread-time-reserver",
+            storageBucket: "eggspread-time-reserver.firebasestorage.app",
+            messagingSenderId: "792367749553",
+            appId: "1:792367749553:web:365c504ae65ccc7fcf4590",
+            measurementId: "G-LLG556KH52"
+
+        };
+
+        // 2. Initialize Firebase & Auth
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        // 3. Monitor Auth State Changes
+        onAuthStateChanged(auth, (user) => {
+            const loggedOutUI = document.getElementById('logged-out-state');
+            const loggedInUI = document.getElementById('logged-in-state');
+            const statusMsg = document.getElementById('status-msg');
+
+            if (user) {
+                // User is signed in with Google
+                document.getElementById('user-photo').src = user.photoURL || '';
+                document.getElementById('user-name').innerText = user.displayName || 'Google User';
+                document.getElementById('user-email').innerText = user.email || 'No email provided';
+                document.getElementById('user-uid').innerText = user.uid;
+
+                loggedOutUI.classList.add('hidden');
+                loggedInUI.classList.remove('hidden');
+                statusMsg.innerText = "Successfully authenticated via Google!";
+            } else {
+                // User is signed out
+                loggedOutUI.classList.remove('hidden');
+                loggedInUI.classList.add('hidden');
+                statusMsg.innerText = "Ready to sign in.";
+            }
+        });
+
+        // 4. Trigger Google Sign-In Popup
+        window.signInWithGoogle = async function() {
+            const statusMsg = document.getElementById('status-msg');
+            statusMsg.innerText = "Opening Google Sign-In popup...";
+
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                // The signed-in user info
+                const user = result.user;
+                console.log("Logged in user:", user);
+            } catch (error) {
+                console.error("Google Sign-In Error:", error);
+                statusMsg.innerText = `Error (${error.code}): ${error.message}`;
+            }
+        };
+
+        // 5. Sign Out
+        window.handleSignOut = async function() {
+            try {
+                await signOut(auth);
+                console.log("User signed out successfully.");
+            } catch (error) {
+                console.error("Sign out error:", error);
+            }
+        };
+    </script>
+</body>
+</html>

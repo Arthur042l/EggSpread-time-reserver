@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.brand-gradient {
+    background: linear-gradient(135deg, #0dd7a8 16%, #5ad849 63%, #d6d971 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* Background Styling */
+.bg-custom-gradient {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #0d9488 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+}
+
+/* Special Glow Effect for 100% Match */
+.all-free-glow {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
+    border: 2px solid #f59e0b !important;
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+    animation: pulse-glow 2s infinite alternate;
+}
+
+@keyframes pulse-glow {
+    0% {
+        box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+    }
+    100% {
+        box-shadow: 0 0 18px rgba(245, 158, 11, 0.6);
+    }
+}
+
+/* Fast Continuous Pulse Glow for Unsaved Save Response Button */
+.unsaved-glow {
+    animation: fast-pulse-glow 0.8s infinite alternate !important;
+}
+
+@keyframes fast-pulse-glow {
+    0% {
+        box-shadow: 0 0 6px rgba(245, 158, 11, 0.5), 0 0 10px rgba(16, 185, 129, 0.4);
+        transform: scale(1);
+    }
+    100% {
+        box-shadow: 0 0 16px rgba(245, 158, 11, 0.9), 0 0 24px rgba(16, 185, 129, 0.8);
+        transform: scale(1.03);
+    }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(13, 148, 136, 0.3);
+    border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(13, 148, 136, 0.6);
+}
+
+/* Utility Animations */
+.transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+}
