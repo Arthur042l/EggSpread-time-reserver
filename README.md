@@ -5,7 +5,7 @@ Link to Web App:
 
 https://arthur042l.github.io/dansan-time-reserver/
 
-## Task:
+## Todo Task:
 
 Priority!
 None
@@ -17,9 +17,7 @@ Major Code Changes:
   - easy sharing (link / QRcode)
   - login page just need name, no need code when link have code
 - Every event have unique sub-pages from the login html (eg. eggspread-time-reserver/#0000) but with same layout
-- setting of the whole website:
-  - login with Google to open admin platform for background settings...
-  - Clear storage of Remember Me
+
 
 Minor:
 - modify: more unify indicator and design of date boxes
@@ -34,8 +32,13 @@ Minor:
   - V Code settings
   - V Event name
   - copy link
+  - Event mode (缺一不可/人多好辦事, whether everyone has to come, blocking any unfree dates, or the most free dates wins)
+    - Edit most member dashboard depend on mode
+  - Event duration/range (select only for a range of date to select, prevent going away.)
+  - Pre-select disable dates.
   - ? admin dashboard
     - delete event
+- Custom layout for weekends/ pattern dates.
 
 
 ## Done Task
@@ -62,3 +65,6 @@ Minor:
   - V author
   - V version
   - V images
+- V setting of the whole website:
+  - V login with Google to open admin platform for background settings...
+  - V Clear storage of Remember Me
