@@ -1,9 +1,23 @@
 # dansan-time-reserver (DateMatch / 蛋散預約器）
-A tool for who often not matching hang out time with Friends.
+
+<p align="center">
+  <img src="material/AppIcon/V3px800.png" alt="DateMatch Logo" width="125" height="125">
+  <div align="center">
+   DateMatch
+    
+   A tool for who often not matching hang out time with Friends.
+   
+   v0.172-alpha
+  </div>
+  
+</p>
+
+--- 
 
 Link to Web App:
 
 https://arthur042l.github.io/dansan-time-reserver/
+
 
 ## Todo Task:
 
