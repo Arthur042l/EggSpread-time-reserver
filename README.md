@@ -1,13 +1,14 @@
-# dansan-time-reserver (DateMatch / 蛋散預約器）
-
 <p align="center">
   <img src="material/AppIcon/V3px800.png" alt="DateMatch Logo" width="125" height="125">
   <div align="center">
-   DateMatch
+    
+   # DateMatch / 蛋散預約器
+
+   ## dansan-time-reserver
     
    A tool for who often not matching hang out time with Friends.
    
-   v0.172-alpha
+   ### v0.172-alpha
   </div>
   
 </p>
