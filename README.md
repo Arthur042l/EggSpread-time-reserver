@@ -4,11 +4,11 @@
     
    # DateMatch / 蛋散預約器
 
-   ### dansan-time-reserver - v0.172-alpha
+   ### dansan-time-reserver
     
    A tool for who often not matching hang out time with Friends.
    
-   ### 
+   ### v0.172-alpha
   </div>
   
 </p>
