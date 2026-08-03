@@ -41,7 +41,7 @@ Minor:
 - modify: longer height date boxes for mobile mode
 - All free depend on joined in and expect no. of member
 - random color for profile picture(easier identification
-- Event code length / character limit (10, _ / - / . / a-z / 0-9)
+- Event code length / character limit (10, _ / . / a-z / 0-9)
   - text count on create
 - Settings page of the event:
   - V No. of member of expected respond
