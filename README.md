@@ -25,13 +25,15 @@ https://arthur042l.github.io/dansan-time-reserver/
 Priority!
 None
 
-Major Code Changes:
+Major Changes:
 - en/chin/genZ/Canton ver language
 - code with 4digit #0000
   - use that code in link box
   - easy sharing (link / QRcode)
   - login page just need name, no need code when link have code
 - Every event have unique sub-pages from the login html (eg. eggspread-time-reserver/#0000) but with same layout
+- Brand redesign (icon, color scheme, name, website domain name)
+- Tidy script.js Code.
 
 
 Minor:
@@ -39,8 +41,7 @@ Minor:
 - modify: longer height date boxes for mobile mode
 - All free depend on joined in and expect no. of member
 - random color for profile picture(easier identification
-- Redisgned brand and icon.
-- Event code length limit (10)
+- Event code length / character limit (10, _ / - / . / a-z / 0-9)
   - text count on create
 - Settings page of the event:
   - V No. of member of expected respond
