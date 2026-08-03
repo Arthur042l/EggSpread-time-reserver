@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="material/AppIcon/V3px800.png" alt="DateMatch Logo" width="125" height="125">
+  <img src="material/AppIcon/V3px800.png" alt="DateMatch Logo" width="100" height="100">
   <div align="center">
     
    # DateMatch / 蛋散預約器
