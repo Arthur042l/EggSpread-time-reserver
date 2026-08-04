@@ -41,7 +41,7 @@ Core Changes:
   - V Code settings
   - V Event name
   - copy link
-  - Event mode (缺一不可/人多好辦事, whether everyone has to come, blocking any unfree dates, or the most free dates wins)
+  - Event mode (缺一不可/人多好辦事,  whether everyone has to come, blocking any unfree dates, or the most free dates wins)
     - Edit most member dashboard depend on mode
   - Event duration/range (select only for a range of date to select, prevent going away.)
   - Pre-select disable dates.
