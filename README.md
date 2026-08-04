@@ -57,9 +57,10 @@ Minor:
 - Event code length / character limit (10, _ / . / a-z / 0-9)
   - text count on create
 
+<details>
+  <summary><b>Click to expand Done Task list ✅ </b></summary>
 
-
-## Done Task
+  ## Done Task
 - V ! Hide the api key in private. (updated firebase rules instead)
 - V Login Page( secret code pairing for each event )
   - V only login foe existing, need register.
@@ -86,3 +87,6 @@ Minor:
 - V setting of the whole website:
   - V login with Google to open admin platform for background settings...
   - V Clear storage of Remember Me
+
+  
+</details>
