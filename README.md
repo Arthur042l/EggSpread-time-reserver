@@ -35,14 +35,7 @@ Major Changes:
 - Brand redesign (icon, color scheme, name, website domain name)
 - Tidy script.js Code.
 
-
-Minor:
-- modify: more unify indicator and design of date boxes
-- modify: longer height date boxes for mobile mode
-- All free depend on joined in and expect no. of member
-- random color for profile picture(easier identification
-- Event code length / character limit (10, _ / . / a-z / 0-9)
-  - text count on create
+Core Changes:
 - Settings page of the event:
   - V No. of member of expected respond
   - V Code settings
@@ -55,6 +48,15 @@ Minor:
   - ? admin dashboard
     - delete event
 - Custom layout for weekends/ pattern dates.
+
+Minor:
+- modify: more unify indicator and design of date boxes
+- modify: longer height date boxes for mobile mode
+- All free depend on joined in and expect no. of member
+- random color for profile picture(easier identification
+- Event code length / character limit (10, _ / . / a-z / 0-9)
+  - text count on create
+
 
 
 ## Done Task
